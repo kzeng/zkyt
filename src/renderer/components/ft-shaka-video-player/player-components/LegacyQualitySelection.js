@@ -31,15 +31,8 @@ export class LegacyQualitySelection extends shaka.ui.SettingsMenu {
 
     const sortedLegacyFormats = [...legacyFormats]
 
-    const videoLegacyFormats = legacyFormats.filter(format => format.width > 0 && format.height > 0)
-    const isPortrait = videoLegacyFormats.length > 0 && videoLegacyFormats[0].height > videoLegacyFormats[0].width
-    sortedLegacyFormats.sort((a, b) => {
-      if (a.width <= 0 || a.height <= 0 || b.width <= 0 || b.height <= 0) {
-        return b.bitrate - a.bitrate
-      }
-
-      return isPortrait ? b.width - a.width : b.height - a.height
-    })
+    const isPortrait = legacyFormats[0].height > legacyFormats[0].width
+    sortedLegacyFormats.sort((a, b) => isPortrait ? b.width - a.width : b.height - a.height)
 
     /** @private */
     this.legacyFormats_ = sortedLegacyFormats
