@@ -215,7 +215,6 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
   - Android generated DASH manifests now use Blob object URLs instead of long `data:` URLs. This avoids Android WebView/Shaka parsing a truncated or malformed manifest and leaving controls visible while playback does nothing.
   - Fixed a legacy quality-selection precedence bug so the selected source actually matches the requested resolution when legacy formats are available.
   - Updated watch-page player fallback so a DASH failure on videos with no legacy streams no longer dead-ends at the "legacy formats unavailable" toast. The page now switches directly to the audio format when it is available and logs an Android DASH manifest summary for follow-up debugging.
-  - Added a remote YouTube DASH/HLS manifest fallback for Local API watch pages. If local DASH manifest generation fails, or YouTube omits direct adaptive format URLs while still providing a manifest URL, ZKYT now keeps a playable manifest instead of clearing `manifestSrc` and ending with no audio or legacy fallback.
 
 ### Current Limitations
 
