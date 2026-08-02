@@ -103,11 +103,17 @@ async function tauriFetch(input, init = undefined) {
     body,
   })
 
-  return new Response(response.body, {
+  const fetchResponse = new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
     headers: response.headers,
   })
+
+  Object.defineProperty(fetchResponse, 'url', {
+    value: url
+  })
+
+  return fetchResponse
 }
 
 /**
@@ -473,9 +479,19 @@ export async function getLocalVideoInfo(id) {
         return fetchForRuntime(input, init)
       }
 
+      const requestText = input instanceof Request
+        ? await input.clone().text().catch(() => '')
+        : ''
       const response = await fetchForRuntime(input, init)
 
       const responseText = await response.text()
+
+      if (!response.ok) {
+        throw new Error(
+          `Request to ${response.url} failed with status code ${response.status}: ${responseText.slice(0, 800)} ` +
+          `Request payload: ${requestText.slice(0, 800)}`
+        )
+      }
 
       responseTime = Date.now()
 
