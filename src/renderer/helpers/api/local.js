@@ -72,7 +72,7 @@ if (process.env.SUPPORTS_LOCAL_API) {
  * @param {RequestInit | undefined} init
  */
 async function tauriFetch(input, init = undefined) {
-  const request = input instanceof Request ? input : new Request(input, init)
+  const request = new Request(input, init)
   const headers = {}
   const url = request.url
 
@@ -114,6 +114,17 @@ async function tauriFetch(input, init = undefined) {
   })
 
   return fetchResponse
+}
+
+async function getRequestText(input, init = undefined) {
+  const request = new Request(input, init)
+  const method = request.method.toUpperCase()
+
+  if (method === 'GET' || method === 'HEAD') {
+    return ''
+  }
+
+  return await request.text().catch(() => '')
 }
 
 /**
@@ -486,9 +497,7 @@ export async function getLocalVideoInfo(id) {
         return fetchForRuntime(input, init)
       }
 
-      const requestText = input instanceof Request
-        ? await input.clone().text().catch(() => '')
-        : ''
+      const requestText = await getRequestText(input, init)
       const response = await fetchForRuntime(input, init)
 
       const responseText = await response.text()

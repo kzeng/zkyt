@@ -194,6 +194,7 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
 - Fixed Android watch-page Local API behavior when YouTube rejects `youtubei/v1/next` with HTTP 400. The watch page now falls back from `getInfo()` to `getBasicInfo()` so playback metadata from `/player` can still load even when the recommendations/next feed request fails. The Watch view now tolerates missing `primary_info` and `secondary_info` fields from the basic response.
 - Fixed Android `/youtubei/v1/player` `FAILED_PRECONDITION` caused by sending GenerateIT `websafeFallbackToken` as if it were a real content-bound player poToken. ZKYT now only sends `serviceIntegrityDimensions.poToken` when BotGuard produces a real WebPO-minter content token; fallback tokens are not attached to `/player`, manifest, or caption URLs.
 - Added an Android-only Local API fallback from the WEB player client to youtubei.js' ANDROID client when `/youtubei/v1/player` returns `FAILED_PRECONDITION`. This keeps the desktop FreeTube WEB+poToken path intact while allowing Android playback metadata to load when a real WebPO content token is unavailable in WebView.
+- Fixed the Tauri Local API fetch adapter to honor the standard `fetch(input, init)` merge behavior. youtubei.js passes processed Innertube headers and JSON payload in `init` even when `input` is already a `Request`; the previous adapter ignored `init` in that case, so Android client fallback requests were still sent with the original WEB payload.
 
 ### Current Limitations
 
