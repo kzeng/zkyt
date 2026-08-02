@@ -671,7 +671,6 @@ export async function getLocalVideoInfo(id) {
     const player = webInnertube.session.player
 
     await decipherFormats(info.streaming_data.formats, player)
-    await decipherFormats(info.streaming_data.adaptive_formats, player)
 
     if (info.streaming_data.server_abr_streaming_url) {
       info.streaming_data.server_abr_streaming_url = await player.decipher(info.streaming_data.server_abr_streaming_url)

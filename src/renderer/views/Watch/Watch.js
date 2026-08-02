@@ -1700,7 +1700,7 @@ export default defineComponent({
 
     useAudioOnlyLegacyFallback: function (streamingData) {
       const audioFormats = streamingData.adaptive_formats
-        .filter(format => format.has_audio && !format.has_video && format.freeTubeUrl)
+        .filter(format => format.has_audio && !format.has_video && format.url)
         .sort((a, b) => b.bitrate - a.bitrate)
         .map(format => ({
           itag: format.itag,
@@ -1710,7 +1710,7 @@ export default defineComponent({
           mimeType: format.mime_type,
           height: 0,
           width: 0,
-          url: format.freeTubeUrl
+          url: format.url
         }))
 
       if (audioFormats.length === 0) {
