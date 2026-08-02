@@ -189,6 +189,7 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
 - Investigated Android BotGuard failures where poToken generation reached Google integrity-token exchange but returned `Could not get integrity token`. The GenerateIT request now sends Chromium/Electron-style cross-site headers and reports the actual status plus a truncated response body instead of hiding the backend response behind a generic error.
 - Fixed Android BotGuard integrity-token parsing after Pixel testing showed Google returning `[null, 43200, null, "<token>"]` with HTTP 200. The parser now accepts the first string entry in the response array instead of assuming the token is always at index 0.
 - Handled Android BotGuard `PMD:Undefined`, where the integrity token exchange succeeds but the WebPO minter callback is not produced by the async snapshot. Android now passes a user interaction element into BotGuard, retries with the synchronous snapshot path, and falls back to a bgutils-js cold start token if a real minter is still unavailable.
+- Corrected Android BotGuard token semantics. Google's GenerateIT response is `[integrityToken, ttl, threshold, websafeFallbackToken]`; Pixel testing returned `null` for the integrity token and a valid websafe fallback token at index 3. ZKYT now returns that fallback token directly instead of feeding it into the WebPO minter as if it were an integrity token.
 
 ### Current Limitations
 

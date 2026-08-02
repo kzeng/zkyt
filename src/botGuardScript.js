@@ -102,20 +102,28 @@ export default async function (videoId, context, fetchFunc = fetch) {
     )
   }
 
-  const integrityToken = Array.isArray(response)
-    ? response.find(item => typeof item === 'string')
+  const integrityToken = Array.isArray(response) && typeof response[0] === 'string'
+    ? response[0]
+    : null
+  const websafeFallbackToken = Array.isArray(response) && typeof response[3] === 'string'
+    ? response[3]
     : null
 
-  if (integrityToken === null) {
+  if (integrityToken === null && websafeFallbackToken === null) {
     throw new Error(
       `Could not get integrity token: status ${integrityTokenResponse.status}\n` +
       integrityTokenResponseText.slice(0, 500)
     )
   }
 
+  if (integrityToken === null) {
+    console.warn('BotGuard returned a websafe fallback token without an integrity token')
+    return websafeFallbackToken
+  }
+
   if (webPoSignalOutput[0] === undefined) {
     console.warn('BotGuard WebPO minter unavailable, using cold start token')
-    return createColdStartToken(videoId)
+    return websafeFallbackToken ?? createColdStartToken(videoId)
   }
 
   const integrityTokenBasedMinter = await WebPoMinter.create({ integrityToken }, webPoSignalOutput)
