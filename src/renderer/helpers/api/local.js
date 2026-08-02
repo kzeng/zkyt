@@ -175,6 +175,13 @@ async function generateContentPoToken(videoId, context) {
   return undefined
 }
 
+function isAndroidWebPlayerPreconditionError(error) {
+  return process.env.IS_TAURI &&
+    error.toString().includes('/youtubei/v1/player') &&
+    error.toString().includes('status code 400') &&
+    error.toString().includes('FAILED_PRECONDITION')
+}
+
 /** @type {Innertube | null} */
 let searchSuggestionsSession = null
 
@@ -548,11 +555,23 @@ export async function getLocalVideoInfo(id) {
 
   let info
   const infoOptions = contentPoToken ? { po_token: contentPoToken } : undefined
+  let { clientName, clientVersion, osName, osVersion } = webInnertube.session.context.client
 
   try {
     info = await webInnertube.getInfo(id, infoOptions)
   } catch (error) {
-    if (
+    if (isAndroidWebPlayerPreconditionError(error)) {
+      console.warn('Local API WEB player request failed, falling back to Android player client', error)
+      const androidInnertube = await createInnertube({ clientType: ClientType.ANDROID })
+      androidInnertube.session.context.client.visitorData = webInnertube.session.context.client.visitorData
+      info = await androidInnertube.getBasicInfo(id)
+      webInnertube.session.player.po_token = undefined
+      const androidClient = androidInnertube.session.context.client
+      clientName = androidClient.clientName
+      clientVersion = androidClient.clientVersion
+      osName = androidClient.osName
+      osVersion = androidClient.osVersion
+    } else if (
       process.env.IS_TAURI &&
       error.toString().includes('/youtubei/v1/next') &&
       error.toString().includes('status code 400')
@@ -567,8 +586,6 @@ export async function getLocalVideoInfo(id) {
   // Some time would be used for parsing and maybe additional requests so end time should be calculated sooner to reduce actual waiting time
   // Legacy format requires this
   const adEndTimeUnixMs = responseTime + totalAdTimeMilliseconds
-
-  let { clientName, clientVersion, osName, osVersion } = webInnertube.session.context.client
 
   let hasTrailer = info.has_trailer
   let trailerIsAgeRestricted = info.getTrailerInfo() === null
