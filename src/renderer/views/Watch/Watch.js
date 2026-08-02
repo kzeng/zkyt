@@ -1451,16 +1451,20 @@ export default defineComponent({
       this.activeFormat = 'legacy'
     },
 
+    hasAudioFormat: function () {
+      return this.manifestSrc !== null &&
+        !((this.isLive || this.isPostLiveDvr) &&
+        // The WEB HLS manifests only contain combined audio and video files, so we can't do audio only
+        // The IOS HLS manifests have audio-only streams
+          this.manifestMimeType === MANIFEST_TYPE_HLS && !this.manifestSrc.includes('/demuxed/1'))
+    },
+
     enableAudioFormat: function () {
       if (this.activeFormat === 'audio') {
         return
       }
 
-      if (this.manifestSrc === null ||
-        ((this.isLive || this.isPostLiveDvr) &&
-        // The WEB HLS manifests only contain combined audio and video files, so we can't do audio only
-        // The IOS HLS manifests have audio-only streams
-          this.manifestMimeType === MANIFEST_TYPE_HLS && !this.manifestSrc.includes('/demuxed/1'))) {
+      if (!this.hasAudioFormat()) {
         showToast(this.t('Change Format.Audio formats are not available for this video'))
         return
       }
@@ -1628,8 +1632,16 @@ export default defineComponent({
 
         switch (this.activeFormat) {
           case 'dash':
-            console.error('Unable to play DASH formats. Reverting to legacy formats...')
-            this.enableLegacyFormat()
+            if (this.legacyFormats.length > 0) {
+              console.error('Unable to play DASH formats. Reverting to legacy formats...')
+              this.enableLegacyFormat()
+            } else if (this.hasAudioFormat()) {
+              console.error('Unable to play DASH formats and legacy formats are not available. Reverting to audio formats...')
+              this.enableAudioFormat()
+            } else {
+              console.error('Unable to play DASH formats and no fallback formats are available.')
+              this.errorMessage = '[DASH_ERROR] No fallback formats are available for this video.'
+            }
             break
           case 'legacy':
             console.error('Unable to play legacy formats. Reverting to audio formats...')
@@ -1664,6 +1676,12 @@ export default defineComponent({
 
     createManifestUrl: function (manifest, mimeType) {
       if (process.env.IS_TAURI && navigator.userAgent.includes('Android')) {
+        console.warn('[ZKYT Android DASH manifest]', {
+          length: manifest.length,
+          prefix: manifest.slice(0, 360),
+          suffix: manifest.slice(-120)
+        })
+
         this.revokeManifestObjectUrl()
         this.manifestObjectUrl = URL.createObjectURL(new Blob([manifest], {
           type: `${mimeType};charset=UTF-8`
