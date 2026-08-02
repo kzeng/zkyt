@@ -186,6 +186,7 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
 - Reused FreeTube's BotGuard poToken flow on Android by allowing the BotGuard script to use an injected fetch implementation and calling it from the Tauri renderer with the Android HTTP bridge. This keeps the watch-page API behavior aligned with upstream FreeTube while replacing only the Electron-specific execution container.
 - Added Electron-equivalent request headers for Tauri Local API requests to `youtubei/*` and Google BotGuard script URLs, including YouTube `Origin`/`Referer` and same-origin fetch metadata. The Android HTTP bridge now also sends fixed-length POST bodies so YouTube does not receive chunked request bodies for Innertube calls.
 - Suppressed the intermediate watch-page Invidious error toast when backend fallback is enabled. Public Invidious instances often reject `/api/v1/videos/:id` with `403 Forbidden`, but that path is only the first attempt before falling back to FreeTube's Local API on Android; showing the nginx HTML error made a recoverable fallback look like the final playback failure.
+- Investigated Android BotGuard failures where poToken generation reached Google integrity-token exchange but returned `Could not get integrity token`. The GenerateIT request now sends Chromium/Electron-style cross-site headers and reports the actual status plus a truncated response body instead of hiding the backend response behind a generic error.
 
 ### Current Limitations
 

@@ -69,17 +69,35 @@ export default async function (videoId, context, fetchFunc = fetch) {
   const integrityTokenResponse = await fetchFunc(buildURL('GenerateIT', true), {
     method: 'POST',
     headers: {
+      Accept: '*/*',
       'content-type': 'application/json+protobuf',
       'x-goog-api-key': GOOG_API_KEY,
       'x-user-agent': 'grpc-web-javascript/0.1',
+      Origin: 'https://www.youtube.com',
+      Referer: 'https://www.youtube.com/',
+      'Sec-Fetch-Mode': 'cors',
+      'Sec-Fetch-Site': 'cross-site',
     },
     body: JSON.stringify([requestKey, botGuardResponse])
   })
 
-  const response = await integrityTokenResponse.json()
+  const integrityTokenResponseText = await integrityTokenResponse.text()
+  let response
+
+  try {
+    response = JSON.parse(integrityTokenResponseText)
+  } catch {
+    throw new Error(
+      `Could not parse integrity token response: status ${integrityTokenResponse.status}\n` +
+      integrityTokenResponseText.slice(0, 500)
+    )
+  }
 
   if (typeof response[0] !== 'string') {
-    throw new Error('Could not get integrity token')
+    throw new Error(
+      `Could not get integrity token: status ${integrityTokenResponse.status}\n` +
+      integrityTokenResponseText.slice(0, 500)
+    )
   }
 
   const integrityTokenBasedMinter = await WebPoMinter.create({ integrityToken: response[0] }, webPoSignalOutput)
