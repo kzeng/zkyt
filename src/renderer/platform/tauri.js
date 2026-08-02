@@ -5,6 +5,19 @@ const invokeDb = (store, action, data) => {
 }
 
 const androidHttpBridge = () => window.ZkytAndroidHttp
+const androidHttpCallbacks = new Map()
+let androidHttpCallbackId = 0
+
+window.__zkytAndroidHttpResolve = (callbackId, responseJson) => {
+  const callback = androidHttpCallbacks.get(callbackId)
+
+  if (!callback) {
+    return
+  }
+
+  androidHttpCallbacks.delete(callbackId)
+  callback(responseJson)
+}
 
 const androidHttpRequest = async (payload) => {
   const bridge = androidHttpBridge()
@@ -13,7 +26,12 @@ const androidHttpRequest = async (payload) => {
     return await invoke('http_request', { payload })
   }
 
-  const response = JSON.parse(bridge.request(JSON.stringify(payload)))
+  const responseJson = await new Promise((resolve) => {
+    const callbackId = `${Date.now()}-${androidHttpCallbackId++}`
+    androidHttpCallbacks.set(callbackId, resolve)
+    bridge.requestAsync(JSON.stringify(payload), callbackId)
+  })
+  const response = JSON.parse(responseJson)
 
   if (response.error) {
     throw new Error(response.error)

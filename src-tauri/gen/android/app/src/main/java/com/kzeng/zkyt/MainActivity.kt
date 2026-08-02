@@ -12,6 +12,7 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
+import kotlin.concurrent.thread
 
 class MainActivity : TauriActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,7 +23,7 @@ class MainActivity : TauriActivity() {
   override fun onWebViewCreate(webView: WebView) {
     super.onWebViewCreate(webView)
 
-    webView.addJavascriptInterface(AndroidHttpBridge(), "ZkytAndroidHttp")
+    webView.addJavascriptInterface(AndroidHttpBridge(this, webView), "ZkytAndroidHttp")
 
     ViewCompat.setOnApplyWindowInsetsListener(webView) { view, insets ->
       val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -32,9 +33,30 @@ class MainActivity : TauriActivity() {
   }
 }
 
-class AndroidHttpBridge {
+class AndroidHttpBridge(
+  private val activity: MainActivity,
+  private val webView: WebView,
+) {
   @JavascriptInterface
   fun request(payloadJson: String): String {
+    return performRequest(payloadJson)
+  }
+
+  @JavascriptInterface
+  fun requestAsync(payloadJson: String, callbackId: String) {
+    thread(start = true) {
+      val response = performRequest(payloadJson)
+
+      activity.runOnUiThread {
+        webView.evaluateJavascript(
+          "window.__zkytAndroidHttpResolve(${JSONObject.quote(callbackId)}, ${JSONObject.quote(response)})",
+          null
+        )
+      }
+    }
+  }
+
+  private fun performRequest(payloadJson: String): String {
     return try {
       val payload = JSONObject(payloadJson)
       val url = URL(payload.getString("url"))

@@ -53,6 +53,13 @@ if (process.env.SUPPORTS_LOCAL_API) {
 
         window.addEventListener('message', listener)
         iframe.contentWindow.postMessage(JSON.stringify({ id: messageId, code }), '*')
+      } else if (process.env.IS_TAURI) {
+        try {
+          // eslint-disable-next-line no-new-func
+          resolve(new Function(code)())
+        } catch (error) {
+          reject(error)
+        }
       } else {
         reject(new Error('Please setup the eval function for the n/sig deciphering'))
       }
@@ -431,11 +438,13 @@ export async function getLocalVideoInfo(id) {
     withPlayer: true,
     generateSessionLocally: false,
     fetchFunc: async (input, init) => {
+      const fetchForRuntime = process.env.IS_TAURI ? tauriFetch : fetch
+
       if (!(input.url?.startsWith('https://www.youtube.com/youtubei/v1/player'))) {
-        return fetch(input, init)
+        return fetchForRuntime(input, init)
       }
 
-      const response = await fetch(input, init)
+      const response = await fetchForRuntime(input, init)
 
       const responseText = await response.text()
 

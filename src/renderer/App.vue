@@ -174,14 +174,13 @@ const isTauri = process.env.IS_TAURI
 onMounted(async () => {
   await store.dispatch('grabUserSettings')
 
-  if (process.env.IS_TAURI && process.env.SUPPORTS_LOCAL_API) {
-    if (store.getters.getBackendPreference !== 'invidious') {
-      await store.dispatch('updateBackendPreference', 'invidious')
-    }
-
-    if (store.getters.getBackendFallback) {
-      await store.dispatch('updateBackendFallback', false)
-    }
+  if (
+    process.env.IS_TAURI &&
+    process.env.SUPPORTS_LOCAL_API &&
+    store.getters.getBackendPreference === 'invidious' &&
+    !store.getters.getBackendFallback
+  ) {
+    await store.dispatch('updateBackendPreference', 'local')
   }
 
   updateTheme()

@@ -178,6 +178,10 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
   - Search results now accept `shortVideo` entries and normalize them like videos, preventing valid first-page search responses from being filtered down to an empty page.
 - Pixel 9 Pro runtime debugging showed that Rust `reqwest` DNS lookup fails under the current Android/VPN path for both Invidious and YouTube hostnames, while Android WebView/Chromium can resolve and fetch `https://inv.nadeko.net/api/v1/popular` with readable CORS JSON. The Android/Tauri Invidious JSON path now uses WebView `fetch` first with a 12 second timeout and falls back across bundled instances through the same path. The native Rust HTTP timeout was also reduced from 20 seconds to 12 seconds so unresolved native requests do not leave mobile pages looking permanently stuck.
 - Further Pixel testing showed WebView CORS is endpoint-specific: `popular` is readable on `inv.nadeko.net`, but `search` is not readable from any tested public Invidious instance. Added an Android-only `ZkytAndroidHttp` JavaScript bridge in `MainActivity` backed by Android `HttpURLConnection`, and changed the Tauri platform HTTP wrapper to use it when present. This moves mobile API requests onto Android's system network stack while keeping the Rust HTTP commands as the non-Android Tauri fallback. Invidious now tries the fast WebView path first and falls back to the platform HTTP bridge for CORS-restricted endpoints such as search.
+- Re-aligned Android backend settings with upstream FreeTube defaults. ZKYT no longer forces Android startup to `backendPreference=invidious` or disables backend fallback; the app now uses FreeTube's normal Local API/Invidious selection semantics, while Android-specific code is limited to the transport layer that makes the same API requests work through the phone's system network stack. Existing Android installs that were previously forced to the `invidious`/no-fallback combination are migrated back to the upstream default `local` backend so watch pages do not get stuck on Invidious instances that disable `/api/v1/videos/:id`.
+- Added the Tauri equivalent of FreeTube's Electron `sigFrame` eval path for youtubei.js player deciphering. This keeps the Local API watch-page flow aligned with upstream FreeTube while making it work in the Android WebView runtime, where the Electron iframe helper does not exist.
+- Routed the Local API watch-page `youtubei/v1/player` fetch hook through the same Tauri transport adapter on Android. This preserves FreeTube's youtubei.js API usage while avoiding WebView CORS failures for player/config requests.
+- Changed the Android HTTP bridge from a synchronous JavaScriptInterface call to an asynchronous callback bridge. Long YouTube/Innertube requests now run off the WebView main thread and resolve back into JavaScript, preventing watch-page loading from freezing the UI or DevTools while preserving the same FreeTube API calls.
 
 ### Current Limitations
 
@@ -185,7 +189,7 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
 - The generated APK is unsigned and must be signed before distribution outside local testing.
 - For manual phone testing, use the debug APK rather than `app-universal-release-unsigned.apk`.
 - Tauri database storage currently uses JSON document files, not SQLite.
-- Tauri Local API `generate_po_token` and n/sig decipher eval support are still incomplete for playback paths that need player URL transformation outside Electron.
+- Tauri Local API `generate_po_token` support is still incomplete for playback paths that need a content poToken outside Electron.
 - Tauri proxy configuration is still unsupported.
 - Android external player integration is still unsupported and must be rebuilt using Android intents.
 - The renderer shell has initial mobile-specific navigation, but deeper pages still need more phone-first layout work.
