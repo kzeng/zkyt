@@ -176,11 +176,15 @@ onMounted(async () => {
 
   if (
     process.env.IS_TAURI &&
-    process.env.SUPPORTS_LOCAL_API &&
-    store.getters.getBackendPreference === 'invidious' &&
-    !store.getters.getBackendFallback
+    process.env.SUPPORTS_LOCAL_API
   ) {
-    await store.dispatch('updateBackendPreference', 'local')
+    if (store.getters.getBackendPreference !== 'invidious') {
+      await store.dispatch('updateBackendPreference', 'invidious')
+    }
+
+    if (!store.getters.getBackendFallback) {
+      await store.dispatch('updateBackendFallback', true)
+    }
   }
 
   updateTheme()
