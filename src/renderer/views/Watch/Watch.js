@@ -935,19 +935,19 @@ export default defineComponent({
 
               this.manifestSrc = this.createLocalSabrManifest(result, poToken, clientInfo, storyboards)
               this.manifestMimeType = MANIFEST_TYPE_SABR
-            } else if (
-              result.streaming_data.adaptive_formats[0]?.url ||
-              result.streaming_data.adaptive_formats[0]?.signature_cipher ||
-              result.streaming_data.adaptive_formats[0]?.cipher
-            ) {
+            } else if (this.hasLocalDashFormats(result.streaming_data)) {
               try {
                 this.manifestSrc = await this.createLocalDashManifest(result)
                 this.manifestMimeType = MANIFEST_TYPE_DASH
               } catch (error) {
-                console.error(`Failed to generate DASH manifest for this video ${this.videoId}, falling back to legacy formats...`, error)
-                this.manifestSrc = null
-                this.enableLegacyFormat()
+                console.error(`Failed to generate DASH manifest for this video ${this.videoId}, falling back to YouTube manifest or legacy formats...`, error)
+                if (!this.useRemoteManifestFallback(result.streaming_data)) {
+                  this.manifestSrc = null
+                  this.enableLegacyFormat()
+                }
               }
+            } else if (this.useRemoteManifestFallback(result.streaming_data)) {
+              // YouTube sometimes omits direct adaptive format URLs but still provides a remote manifest.
             } else {
               this.manifestSrc = null
               this.enableLegacyFormat()
@@ -1672,6 +1672,28 @@ export default defineComponent({
       ])
 
       return this.createManifestUrl(xmlData, MANIFEST_TYPE_DASH)
+    },
+
+    hasLocalDashFormats: function (streamingData) {
+      return streamingData.adaptive_formats.some(format => {
+        return format.url || format.signature_cipher || format.cipher
+      })
+    },
+
+    useRemoteManifestFallback: function (streamingData) {
+      if (streamingData.dash_manifest_url) {
+        this.manifestSrc = streamingData.dash_manifest_url
+        this.manifestMimeType = MANIFEST_TYPE_DASH
+        return true
+      }
+
+      if (streamingData.hls_manifest_url) {
+        this.manifestSrc = streamingData.hls_manifest_url
+        this.manifestMimeType = MANIFEST_TYPE_HLS
+        return true
+      }
+
+      return false
     },
 
     createManifestUrl: function (manifest, mimeType) {
