@@ -199,6 +199,12 @@ async function performSearchLocal(payload) {
       showFamilyFriendlyOnly.value
     )
 
+    if (results.length === 0 && backendPreference.value === 'local' && backendFallback.value) {
+      showToast(t('Falling back to Invidious API'))
+      await performSearchInvidious(payload, { resetSearchPage: true })
+      return
+    }
+
     apiUsed.value = 'local'
 
     shownResults.value = results

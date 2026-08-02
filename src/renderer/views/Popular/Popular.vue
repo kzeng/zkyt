@@ -39,6 +39,7 @@ import FtRefreshWidget from '../../components/FtRefreshWidget/FtRefreshWidget.vu
 import store from '../../store/index'
 
 import { getInvidiousPopularFeed } from '../../helpers/api/invidious'
+import { getLocalSearchResults, getLocalTrending } from '../../helpers/api/local'
 import { copyToClipboard, getRelativeTimeFromDate, showToast } from '../../helpers/utils'
 import { useI18n } from 'vue-i18n'
 import { KeyboardShortcuts } from '../../../constants'
@@ -58,6 +59,18 @@ const popularCache = computed(() => {
 
 const shownResults = shallowRef(popularCache.value || [])
 
+const backendPreference = computed(() => {
+  return store.getters.getBackendPreference
+})
+
+const backendFallback = computed(() => {
+  return store.getters.getBackendFallback
+})
+
+const region = computed(() => {
+  return store.getters.getRegion.toUpperCase()
+})
+
 onMounted(() => {
   document.addEventListener('keydown', keyboardShortcutHandler)
 
@@ -74,7 +87,7 @@ async function fetchPopularInfo() {
   isLoading.value = true
 
   try {
-    const items = await getInvidiousPopularFeed()
+    const items = await getPopularFeed()
 
     store.commit('setLastPopularRefreshTimestamp', new Date())
     shownResults.value = items
@@ -87,6 +100,31 @@ async function fetchPopularInfo() {
       copyToClipboard(err)
     })
   }
+}
+
+async function getPopularFeed() {
+  if (process.env.SUPPORTS_LOCAL_API && (backendPreference.value === 'local' || process.env.IS_TAURI)) {
+    try {
+      const items = await getLocalTrending(region.value)
+      if (items.length > 0 || !backendFallback.value) {
+        return items
+      }
+
+      const { results } = await getLocalSearchResults('popular videos', {
+        type: 'video'
+      }, false)
+      if (results.length > 0 || !backendFallback.value) {
+        return results
+      }
+    } catch (error) {
+      console.warn('Local popular feed failed, falling back to Invidious', error)
+      if (!backendFallback.value) {
+        throw error
+      }
+    }
+  }
+
+  return await getInvidiousPopularFeed()
 }
 
 /**

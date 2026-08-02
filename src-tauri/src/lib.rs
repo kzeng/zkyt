@@ -23,6 +23,24 @@ struct ExternalPlayerPayload {
     _timestamp: Option<f64>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HttpRequestPayload {
+    url: String,
+    method: Option<String>,
+    headers: Option<Map<String, Value>>,
+    body: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct HttpResponsePayload {
+    status: u16,
+    status_text: String,
+    headers: Vec<(String, String)>,
+    body: String,
+}
+
 #[derive(Debug, Serialize)]
 struct UnsupportedCommand {
     command: &'static str,
@@ -849,6 +867,78 @@ fn open_in_external_player(_payload: ExternalPlayerPayload) -> Result<(), String
 }
 
 #[tauri::command]
+async fn http_request(payload: HttpRequestPayload) -> Result<HttpResponsePayload, String> {
+    let parsed_url = reqwest::Url::parse(&payload.url).map_err(|error| error.to_string())?;
+
+    if parsed_url.scheme() != "https" {
+        return Err("only https URLs are allowed".to_owned());
+    }
+
+    let method = payload
+        .method
+        .as_deref()
+        .unwrap_or("GET")
+        .parse::<reqwest::Method>()
+        .map_err(|error| error.to_string())?;
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(20))
+        .user_agent("ZKYT Tauri Android")
+        .build()
+        .map_err(|error| error.to_string())?;
+
+    let mut request = client.request(method, parsed_url);
+
+    if let Some(headers) = payload.headers {
+        for (name, value) in headers {
+            let Some(value) = value.as_str() else {
+                continue;
+            };
+
+            let lower_name = name.to_ascii_lowercase();
+            if matches!(
+                lower_name.as_str(),
+                "host" | "connection" | "content-length" | "cookie"
+            ) {
+                continue;
+            }
+
+            let header_name = reqwest::header::HeaderName::from_bytes(name.as_bytes())
+                .map_err(|error| error.to_string())?;
+            let header_value =
+                reqwest::header::HeaderValue::from_str(value).map_err(|error| error.to_string())?;
+            request = request.header(header_name, header_value);
+        }
+    }
+
+    if let Some(body) = payload.body {
+        request = request.body(body);
+    }
+
+    let response = request.send().await.map_err(format_reqwest_error)?;
+    let status = response.status();
+    let status_text = status.canonical_reason().unwrap_or("").to_owned();
+    let headers = response
+        .headers()
+        .iter()
+        .filter_map(|(name, value)| {
+            value
+                .to_str()
+                .ok()
+                .map(|value| (name.to_string(), value.to_owned()))
+        })
+        .collect::<Vec<_>>();
+    let body = response.text().await.map_err(|error| error.to_string())?;
+
+    Ok(HttpResponsePayload {
+        status: status.as_u16(),
+        status_text,
+        headers,
+        body,
+    })
+}
+
+#[tauri::command]
 async fn http_get_json(url: String, authorization: Option<String>) -> Result<Value, String> {
     let parsed_url = reqwest::Url::parse(&url).map_err(|error| error.to_string())?;
 
@@ -929,6 +1019,7 @@ pub fn run() {
             generate_po_token,
             relaunch_app,
             open_in_external_player,
+            http_request,
             http_get_json,
             db_request,
         ])

@@ -159,6 +159,15 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
   - Raised the mobile shell breakpoint and matching search toggle logic to 960px so Pixel-class phones in landscape still use the mobile top/bottom navigation instead of falling back to the desktop sidebar layout.
 - Investigated empty Popular/Search results on a Pixel using Clash VPN. The installed app has `INTERNET` granted and Android reports the VPN network as validated, so the issue is not a missing Android permission. Added Tauri/Invidious fallback for empty first-page `popular` and `search` arrays because some instances can return successful but empty API responses under specific instance/VPN/region combinations. Also fixed the search page to stop loading if an API returns no result object, and truncated native HTTP error bodies so Android toasts/logs remain readable.
 - Re-tested the bundled Invidious instances from the development machine on 2026-08-02. `https://inv.nadeko.net/api/v1/popular` returned valid JSON, while `invidious.f5.si` and `yt.chocolatemoo53.com` returned 403 and `inv.zoomerville.com` hung during probing. The bundled list was reduced to `https://inv.nadeko.net` so Android starts from the currently verified API instance and clears stale persisted defaults that are no longer bundled.
+- Switched the Tauri renderer build to enable FreeTube's Local API path. This makes Android prefer direct YouTube/youtubei.js requests, which better matches the Pixel test environment where Clash VPN allows Firefox to reach YouTube but third-party Invidious APIs can still fail or return empty results.
+- Added a Tauri startup migration that forces the Android backend preference to Local API and enables backend fallback. This updates older installed app settings that were persisted while the Tauri build still advertised only Invidious support.
+- Extended `getLocalTrending` with a default YouTube trending browse endpoint and changed the Popular page to prefer that local YouTube feed on Tauri, with Invidious as fallback.
+- Added a generic Tauri native HTTP request command and wired the Local API youtubei.js fetch adapter through it. Android Local API requests now use Rust/reqwest instead of Android WebView `fetch`, avoiding WebView-specific `TypeError: Failed to fetch` failures for Popular/Search under the Pixel VPN setup.
+- Added an Android Popular-page fallback from YouTube Trending browse to a Local API YouTube video search for `popular videos`, then Invidious as the final fallback. This avoids an empty Popular page when YouTube's trending browse response parses to no supported FreeTube list items.
+- Added the same Local API search fallback to the Trending page tabs: gaming, sports, and podcasts now query YouTube search if the tab-specific trending browse response parses to an empty list.
+- Changed Local API search so an empty first result set can fall back to Invidious when backend fallback is enabled instead of leaving a blank search page.
+- Fixed the Settings navigation entry after replacing the mobile More tab. The `/settings` route and page were still present, but the visible entry was mobile-only while the old More component was hidden by breakpoint CSS. The Settings entry is now a direct side navigation item across desktop and mobile layouts.
+- Adjusted the Subscriptions page tab bar so Videos, Shorts, Live, and Posts stay on one row. On narrow screens the row can scroll horizontally instead of wrapping.
 
 ### Current Limitations
 
@@ -166,10 +175,10 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
 - The generated APK is unsigned and must be signed before distribution outside local testing.
 - For manual phone testing, use the debug APK rather than `app-universal-release-unsigned.apk`.
 - Tauri database storage currently uses JSON document files, not SQLite.
-- Tauri Local API `generate_po_token` is still unsupported because the current implementation depends on Electron.
+- Tauri Local API `generate_po_token` and n/sig decipher eval support are still incomplete for playback paths that need player URL transformation outside Electron.
 - Tauri proxy configuration is still unsupported.
 - Android external player integration is still unsupported and must be rebuilt using Android intents.
-- The renderer still uses the desktop layout and has not been redesigned for phone ergonomics.
+- The renderer shell has initial mobile-specific navigation, but deeper pages still need more phone-first layout work.
 - Tauri build currently reuses the existing renderer webpack pipeline with a Tauri-specific wrapper config.
 
 ### Next Steps

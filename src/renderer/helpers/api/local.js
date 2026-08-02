@@ -61,6 +61,34 @@ if (process.env.SUPPORTS_LOCAL_API) {
 }
 
 /**
+ * @param {RequestInfo | URL} input
+ * @param {RequestInit | undefined} init
+ */
+async function tauriFetch(input, init = undefined) {
+  const request = input instanceof Request ? input : new Request(input, init)
+  const headers = {}
+
+  request.headers.forEach((value, key) => {
+    headers[key] = value
+  })
+
+  const method = request.method.toUpperCase()
+  const body = method === 'GET' || method === 'HEAD' ? null : await request.text()
+  const response = await platform.httpRequest({
+    url: request.url,
+    method,
+    headers,
+    body,
+  })
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers,
+  })
+}
+
+/**
  * Creates a lightweight Innertube instance, which is faster to create or
  * an instance that can decode the streaming URLs, which is slower to create
  * the lightweight one only needs a single web request to create the new session
@@ -99,8 +127,7 @@ async function createInnertube({ withPlayer = false, location = undefined, safet
     enable_safety_mode: !!safetyMode,
     client_type: clientType,
 
-    // use browser fetch
-    fetch: (fetchFunc ?? ((input, init) => fetch(input, init))),
+    fetch: fetchFunc ?? (process.env.IS_TAURI ? tauriFetch : (input, init) => fetch(input, init)),
     cache,
     generate_session_locally: !!generateSessionLocally
   })
@@ -311,14 +338,19 @@ export async function untilEndOfLocalPlayList(playlist, callback, options = { ru
 
 /**
  * @param {string} location
- * @param {'gaming' | 'sports' | 'podcasts'} tab
+ * @param {'default' | 'gaming' | 'sports' | 'podcasts'} tab
  */
-export async function getLocalTrending(location, tab) {
+export async function getLocalTrending(location, tab = 'default') {
   const innertube = await createInnertube({ location })
 
   let args
 
   switch (tab) {
+    case 'default':
+      args = {
+        browseId: 'FEtrending'
+      }
+      break
     case 'gaming':
       // https://www.youtube.com/gaming/trending
       args = {

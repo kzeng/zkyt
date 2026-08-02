@@ -116,7 +116,6 @@
           {{ $t("Playlists") }}
         </p>
       </router-link>
-      <SideNavMoreOptions class="mobileHidden" />
       <router-link
         class="navOption mobileShow"
         role="button"
@@ -140,7 +139,7 @@
       </router-link>
       <hr>
       <router-link
-        class="navOption mobileShow"
+        class="navOption"
         role="button"
         to="/settings"
         :title="settingsTitle"
@@ -210,7 +209,6 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import FtFlexBox from '../ft-flex-box/ft-flex-box.vue'
-import SideNavMoreOptions from '../SideNavMoreOptions/SideNavMoreOptions.vue'
 
 import store from '../../store/index'
 

@@ -34,6 +34,7 @@ export default {
   relaunch: () => invoke('relaunch_app'),
   openInExternalPlayer: (payload) => invoke('open_in_external_player', { payload }),
   handleOpenInExternalPlayerResult: () => {},
+  httpRequest: (payload) => invoke('http_request', { payload }),
   httpGetJson: (url, authorization = null) => invoke('http_get_json', { url: url.toString(), authorization }),
   setZoomFactor: () => {},
   getNavigationHistory: async () => [],

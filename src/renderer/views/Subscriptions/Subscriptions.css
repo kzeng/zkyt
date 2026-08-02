@@ -12,6 +12,11 @@
   inline-size: 100%;
   margin-block: -3px 10px;
   color: var(--tertiary-text-color);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  white-space: nowrap;
 }
 
 .selectedTab {
@@ -24,10 +29,12 @@
 
 .tab {
   text-align: center;
-  padding: 15px;
+  padding-block: 15px;
+  padding-inline: clamp(8px, 3vw, 15px);
   font-size: 1.1em;
   cursor: pointer;
   align-self: flex-end;
+  flex: 0 0 auto;
 }
 
 .tab:hover {
@@ -41,5 +48,9 @@
 @media only screen and (width <= 680px) {
   .card {
     inline-size: 90%;
+  }
+
+  .tab {
+    font-size: 0.95em;
   }
 }

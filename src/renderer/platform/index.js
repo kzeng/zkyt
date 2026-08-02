@@ -30,6 +30,7 @@ const createUnsupportedPlatform = () => ({
   relaunch: noop,
   openInExternalPlayer: noop,
   handleOpenInExternalPlayerResult: noop,
+  httpRequest: unsupportedPlatformMethod('httpRequest'),
   httpGetJson: unsupportedPlatformMethod('httpGetJson'),
   setZoomFactor: noop,
   getNavigationHistory: async () => [],

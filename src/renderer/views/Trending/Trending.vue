@@ -112,7 +112,7 @@ import FtRefreshWidget from '../../components/FtRefreshWidget/FtRefreshWidget.vu
 import store from '../../store/index'
 
 import { copyToClipboard, getRelativeTimeFromDate, showToast } from '../../helpers/utils'
-import { getLocalTrending } from '../../helpers/api/local'
+import { getLocalSearchResults, getLocalTrending } from '../../helpers/api/local'
 import { KeyboardShortcuts } from '../../../constants'
 
 const { t } = useI18n()
@@ -173,7 +173,14 @@ async function getTrendingInfoLocal() {
   isLoading.value[currentTab.value] = true
 
   try {
-    const results = await getLocalTrending(region.value, currentTab.value)
+    let results = await getLocalTrending(region.value, currentTab.value)
+
+    if (results.length === 0) {
+      const { results: searchResults } = await getLocalSearchResults(getTrendingFallbackQuery(currentTab.value), {
+        type: 'video'
+      }, false)
+      results = searchResults
+    }
 
     shownResults.value = results
     isLoading.value[currentTab.value] = false
@@ -189,6 +196,20 @@ async function getTrendingInfoLocal() {
       copyToClipboard(error)
     })
     isLoading.value[currentTab.value] = false
+  }
+}
+
+/**
+ * @param {'gaming' | 'sports' | 'podcasts'} tab
+ */
+function getTrendingFallbackQuery(tab) {
+  switch (tab) {
+    case 'gaming':
+      return 'gaming trending'
+    case 'sports':
+      return 'sports highlights'
+    case 'podcasts':
+      return 'popular podcasts'
   }
 }
 

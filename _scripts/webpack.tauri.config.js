@@ -16,7 +16,7 @@ config.plugins = config.plugins.map(plugin => {
       ...plugin.definitions,
       'process.env.IS_ELECTRON': false,
       'process.env.IS_TAURI': true,
-      'process.env.SUPPORTS_LOCAL_API': false,
+      'process.env.SUPPORTS_LOCAL_API': true,
     })
   }
 

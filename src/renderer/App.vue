@@ -174,6 +174,16 @@ const isTauri = process.env.IS_TAURI
 onMounted(async () => {
   await store.dispatch('grabUserSettings')
 
+  if (process.env.IS_TAURI && process.env.SUPPORTS_LOCAL_API) {
+    if (store.getters.getBackendPreference !== 'local') {
+      await store.dispatch('updateBackendPreference', 'local')
+    }
+
+    if (!store.getters.getBackendFallback) {
+      await store.dispatch('updateBackendFallback', true)
+    }
+  }
+
   updateTheme()
 
   await store.dispatch('fetchInvidiousInstancesFromFile')
