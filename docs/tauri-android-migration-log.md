@@ -191,6 +191,7 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
 - Handled Android BotGuard `PMD:Undefined`, where the integrity token exchange succeeds but the WebPO minter callback is not produced by the async snapshot. Android now passes a user interaction element into BotGuard, retries with the synchronous snapshot path, and falls back to a bgutils-js cold start token if a real minter is still unavailable.
 - Corrected Android BotGuard token semantics. Google's GenerateIT response is `[integrityToken, ttl, threshold, websafeFallbackToken]`; Pixel testing returned `null` for the integrity token and a valid websafe fallback token at index 3. ZKYT now returns that fallback token directly instead of feeding it into the WebPO minter as if it were an integrity token.
 - Restored `Response.url` on the Tauri Local API fetch adapter and added watch-player HTTP diagnostics for non-2xx `youtubei/v1/player` responses. This prevents youtubei.js from reporting `Request to failed with status code 400` without a URL and exposes the response body plus a short request payload excerpt.
+- Fixed Android watch-page Local API behavior when YouTube rejects `youtubei/v1/next` with HTTP 400. The watch page now falls back from `getInfo()` to `getBasicInfo()` so playback metadata from `/player` can still load even when the recommendations/next feed request fails. The Watch view now tolerates missing `primary_info` and `secondary_info` fields from the basic response.
 
 ### Current Limitations
 

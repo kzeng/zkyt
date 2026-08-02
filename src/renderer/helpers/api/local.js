@@ -544,7 +544,22 @@ export async function getLocalVideoInfo(id) {
     }
   }
 
-  const info = await webInnertube.getInfo(id, { po_token: contentPoToken })
+  let info
+
+  try {
+    info = await webInnertube.getInfo(id, { po_token: contentPoToken })
+  } catch (error) {
+    if (
+      process.env.IS_TAURI &&
+      error.toString().includes('/youtubei/v1/next') &&
+      error.toString().includes('status code 400')
+    ) {
+      console.warn('Local API watch_next request failed, falling back to basic player info', error)
+      info = await webInnertube.getBasicInfo(id, { po_token: contentPoToken })
+    } else {
+      throw error
+    }
+  }
 
   // Some time would be used for parsing and maybe additional requests so end time should be calculated sooner to reduce actual waiting time
   // Legacy format requires this
