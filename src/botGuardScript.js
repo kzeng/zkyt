@@ -1,6 +1,6 @@
 import { BotGuardClient } from 'bgutils-js/botguard'
 import { buildURL, GOOG_API_KEY } from 'bgutils-js/utils'
-import { WebPoMinter } from 'bgutils-js/webpo'
+import { createColdStartToken, WebPoMinter } from 'bgutils-js/webpo'
 
 // This script has it's own webpack config, as it gets passed as a string to Electron's evaluateJavaScript function
 // in src/main/poTokenGenerator.js
@@ -60,11 +60,20 @@ export default async function (videoId, context, fetchFunc = fetch) {
   const botGuard = await BotGuardClient.create({
     program: challengeData.bgChallenge.program,
     globalName: challengeData.bgChallenge.globalName,
-    globalObject: window
+    globalObject: window,
+    userInteractionElement: document.documentElement
   })
 
   const webPoSignalOutput = []
-  const botGuardResponse = await botGuard.snapshot({ webPoSignalOutput }, 10_000)
+  let botGuardResponse = await botGuard.snapshot({ webPoSignalOutput }, 10_000)
+
+  if (webPoSignalOutput[0] === undefined) {
+    try {
+      botGuardResponse = await botGuard.snapshotSynchronous({ webPoSignalOutput })
+    } catch (error) {
+      console.warn('BotGuard synchronous snapshot failed', error)
+    }
+  }
 
   const integrityTokenResponse = await fetchFunc(buildURL('GenerateIT', true), {
     method: 'POST',
@@ -102,6 +111,11 @@ export default async function (videoId, context, fetchFunc = fetch) {
       `Could not get integrity token: status ${integrityTokenResponse.status}\n` +
       integrityTokenResponseText.slice(0, 500)
     )
+  }
+
+  if (webPoSignalOutput[0] === undefined) {
+    console.warn('BotGuard WebPO minter unavailable, using cold start token')
+    return createColdStartToken(videoId)
   }
 
   const integrityTokenBasedMinter = await WebPoMinter.create({ integrityToken }, webPoSignalOutput)
