@@ -93,14 +93,18 @@ export default async function (videoId, context, fetchFunc = fetch) {
     )
   }
 
-  if (typeof response[0] !== 'string') {
+  const integrityToken = Array.isArray(response)
+    ? response.find(item => typeof item === 'string')
+    : null
+
+  if (integrityToken === null) {
     throw new Error(
       `Could not get integrity token: status ${integrityTokenResponse.status}\n` +
       integrityTokenResponseText.slice(0, 500)
     )
   }
 
-  const integrityTokenBasedMinter = await WebPoMinter.create({ integrityToken: response[0] }, webPoSignalOutput)
+  const integrityTokenBasedMinter = await WebPoMinter.create({ integrityToken }, webPoSignalOutput)
 
   return await integrityTokenBasedMinter.mintAsWebsafeString(videoId)
 }
