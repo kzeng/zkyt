@@ -537,7 +537,9 @@ export async function getLocalVideoInfo(id) {
         JSON.stringify(webInnertube.session.context)
       )
 
-      webInnertube.session.player.po_token = contentPoToken
+      if (contentPoToken) {
+        webInnertube.session.player.po_token = contentPoToken
+      }
     } catch (error) {
       console.error('Local API, poToken generation failed', error)
       throw error
@@ -545,9 +547,10 @@ export async function getLocalVideoInfo(id) {
   }
 
   let info
+  const infoOptions = contentPoToken ? { po_token: contentPoToken } : undefined
 
   try {
-    info = await webInnertube.getInfo(id, { po_token: contentPoToken })
+    info = await webInnertube.getInfo(id, infoOptions)
   } catch (error) {
     if (
       process.env.IS_TAURI &&
@@ -555,7 +558,7 @@ export async function getLocalVideoInfo(id) {
       error.toString().includes('status code 400')
     ) {
       console.warn('Local API watch_next request failed, falling back to basic player info', error)
-      info = await webInnertube.getBasicInfo(id, { po_token: contentPoToken })
+      info = await webInnertube.getBasicInfo(id, infoOptions)
     } else {
       throw error
     }
@@ -584,7 +587,10 @@ export async function getLocalVideoInfo(id) {
       // getBasicInfo needs the signature timestamp (sts) from inside the player
       webEmbeddedInnertube.session.player = webInnertube.session.player
 
-      const bypassedInfo = await webEmbeddedInnertube.getBasicInfo(videoId, { client: 'WEB_EMBEDDED', po_token: contentPoToken })
+      const bypassedInfo = await webEmbeddedInnertube.getBasicInfo(videoId, {
+        client: 'WEB_EMBEDDED',
+        ...(contentPoToken ? { po_token: contentPoToken } : {})
+      })
 
       if (bypassedInfo.playability_status.status === 'OK' && bypassedInfo.streaming_data) {
         info.playability_status = bypassedInfo.playability_status
@@ -641,21 +647,29 @@ export async function getLocalVideoInfo(id) {
     }
 
     if (info.streaming_data.dash_manifest_url) {
-      info.streaming_data.dash_manifest_url = await decipherManifestUrl(
-        info.streaming_data.dash_manifest_url,
-        webInnertube.session.player,
-        contentPoToken,
-        true
-      )
+      if (contentPoToken) {
+        info.streaming_data.dash_manifest_url = await decipherManifestUrl(
+          info.streaming_data.dash_manifest_url,
+          webInnertube.session.player,
+          contentPoToken,
+          true
+        )
+      } else {
+        info.streaming_data.dash_manifest_url = await webInnertube.session.player.decipher(info.streaming_data.dash_manifest_url)
+      }
     }
 
     if (info.streaming_data.hls_manifest_url) {
-      info.streaming_data.hls_manifest_url = await decipherManifestUrl(
-        info.streaming_data.hls_manifest_url,
-        webInnertube.session.player,
-        contentPoToken,
-        false
-      )
+      if (contentPoToken) {
+        info.streaming_data.hls_manifest_url = await decipherManifestUrl(
+          info.streaming_data.hls_manifest_url,
+          webInnertube.session.player,
+          contentPoToken,
+          false
+        )
+      } else {
+        info.streaming_data.hls_manifest_url = await webInnertube.session.player.decipher(info.streaming_data.hls_manifest_url)
+      }
     }
   }
 
@@ -663,8 +677,10 @@ export async function getLocalVideoInfo(id) {
     for (const captionTrack of info.captions.caption_tracks) {
       const url = new URL(captionTrack.base_url)
 
-      url.searchParams.set('potc', '1')
-      url.searchParams.set('pot', contentPoToken)
+      if (contentPoToken) {
+        url.searchParams.set('potc', '1')
+        url.searchParams.set('pot', contentPoToken)
+      }
       url.searchParams.set('c', clientName)
 
       // Remove &xosf=1 as it adds `position:63% line:0%` to the subtitle lines

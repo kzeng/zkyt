@@ -1,6 +1,6 @@
 import { BotGuardClient } from 'bgutils-js/botguard'
 import { buildURL, GOOG_API_KEY } from 'bgutils-js/utils'
-import { createColdStartToken, WebPoMinter } from 'bgutils-js/webpo'
+import { WebPoMinter } from 'bgutils-js/webpo'
 
 // This script has it's own webpack config, as it gets passed as a string to Electron's evaluateJavaScript function
 // in src/main/poTokenGenerator.js
@@ -117,13 +117,13 @@ export default async function (videoId, context, fetchFunc = fetch) {
   }
 
   if (integrityToken === null) {
-    console.warn('BotGuard returned a websafe fallback token without an integrity token')
-    return websafeFallbackToken
+    console.warn('BotGuard returned only a websafe fallback token; skipping player poToken')
+    return undefined
   }
 
   if (webPoSignalOutput[0] === undefined) {
-    console.warn('BotGuard WebPO minter unavailable, using cold start token')
-    return websafeFallbackToken ?? createColdStartToken(videoId)
+    console.warn('BotGuard WebPO minter unavailable; skipping player poToken')
+    return undefined
   }
 
   const integrityTokenBasedMinter = await WebPoMinter.create({ integrityToken }, webPoSignalOutput)
