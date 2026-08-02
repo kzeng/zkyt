@@ -211,6 +211,7 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
 - Adjusted Android playback startup diagnostics:
   - Android WebView now explicitly disables `mediaPlaybackRequiresUserGesture` so Shaka/video playback is not blocked by the WebView media policy.
   - The video element now logs native media error details on Android, including media error code, ready/network state, current source, selected format, and video id.
+- Reverted the later experimental Android playback fallback commits after repeated regressions (`[DASH_ERROR] No fallback formats are available for this video` and `No valid URL to decipher`). The playback path is intentionally back at the `ad71781` behavior, which matched the previously better on-device result, before making smaller targeted changes.
 
 ### Current Limitations
 
