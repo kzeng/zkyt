@@ -58,6 +58,20 @@ import { useI18n } from 'vue-i18n'
 
 const MANIFEST_TYPE_DASH = 'application/dash+xml'
 const MANIFEST_TYPE_HLS = 'application/x-mpegurl'
+
+function escapeDashTextNode(text) {
+  return text
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll(/&(?!(?:#\d+|#x[\da-fA-F]+|[a-zA-Z][\w.-]*);)/g, '&amp;')
+}
+
+function repairDashManifestXml(manifest) {
+  return manifest.replaceAll(
+    /(<BaseURL(?:\s[^>]*)?>)([\s\S]*?)(<\/BaseURL>)/g,
+    (_match, openTag, text, closeTag) => `${openTag}${escapeDashTextNode(text)}${closeTag}`
+  )
+}
 const UNAVAILABLE_VIDEO_THUMBNAILS = {
   light: 'https://www.youtube.com/img/desktop/unavailable/unavailable_video.png',
   dark: 'https://www.youtube.com/img/desktop/unavailable/unavailable_video_dark_theme.png'
@@ -140,6 +154,7 @@ export default defineComponent({
       manifestSrc: null,
       /** @type {string|null} */
       manifestObjectUrl: null,
+      manifestMemoryUrl: null,
       /** @type {(MANIFEST_TYPE_DASH|MANIFEST_TYPE_HLS|MANIFEST_TYPE_SABR)} */
       manifestMimeType: MANIFEST_TYPE_DASH,
       /** @type {SabrData | null} */
@@ -324,6 +339,34 @@ export default defineComponent({
 
       // `this.$refs.player?.hasLoaded` cannot be used in computed property
       return !this.isLoading
+    },
+
+    hasPlayableSource() {
+      if (this.activeFormat === 'legacy') {
+        return this.legacyFormats.length > 0
+      }
+
+      return this.manifestSrc !== null
+    },
+
+    useAndroidEmbedFallback() {
+      return process.env.IS_TAURI &&
+        navigator.userAgent.includes('Android') &&
+        !this.hasPlayableSource &&
+        this.errorMessage === 'No playable formats were returned for this video' &&
+        this.videoId !== ''
+    },
+
+    youtubeEmbedSrc() {
+      const url = new URL(`https://www.youtube-nocookie.com/embed/${this.videoId}`)
+      url.searchParams.set('playsinline', '1')
+      url.searchParams.set('rel', '0')
+
+      if (this.startTimeSeconds !== null) {
+        url.searchParams.set('start', Math.floor(this.startTimeSeconds).toString())
+      }
+
+      return url.toString()
     },
 
     chaptersSrc() {
@@ -956,6 +999,10 @@ export default defineComponent({
             this.manifestSrc = null
             this.enableLegacyFormat()
           }
+        }
+
+        if (!this.isUpcoming && !this.hasPlayableSource) {
+          throw new Error('No playable formats were returned for this video')
         }
 
         this.isLoading = false
@@ -1663,21 +1710,42 @@ export default defineComponent({
     },
 
     createDashManifestUrl: function (manifest) {
+      const repairedManifest = repairDashManifestXml(manifest)
+
       if (process.env.IS_TAURI && navigator.userAgent.includes('Android')) {
         this.revokeManifestObjectUrl()
-        this.manifestObjectUrl = URL.createObjectURL(new Blob([manifest], {
-          type: `${MANIFEST_TYPE_DASH};charset=UTF-8`
-        }))
-        return this.manifestObjectUrl
+
+        window.__zkytDashManifests ??= new Map()
+        window.__zkytLastDashManifestDebug = {
+          videoId: this.videoId,
+          originalLength: manifest.length,
+          repairedLength: repairedManifest.length,
+          originalStart: manifest.slice(0, 800),
+          repairedStart: repairedManifest.slice(0, 800),
+          originalAroundColumn303: manifest.slice(250, 370),
+          repairedAroundColumn303: repairedManifest.slice(250, 370)
+        }
+
+        const manifestKey = `${this.videoId}-${Date.now()}-${Math.random().toString(36).slice(2)}`
+        window.__zkytDashManifests.set(manifestKey, repairedManifest)
+        this.manifestMemoryUrl = `zkyt-dash-manifest://${manifestKey}`
+
+        return this.manifestMemoryUrl
       }
 
-      return `data:${MANIFEST_TYPE_DASH};charset=UTF-8,${encodeURIComponent(manifest)}`
+      return `data:${MANIFEST_TYPE_DASH};charset=UTF-8,${encodeURIComponent(repairedManifest)}`
     },
 
     revokeManifestObjectUrl: function () {
       if (this.manifestObjectUrl !== null) {
         URL.revokeObjectURL(this.manifestObjectUrl)
         this.manifestObjectUrl = null
+      }
+
+      if (this.manifestMemoryUrl !== null) {
+        const manifestKey = new URL(this.manifestMemoryUrl).host
+        window.__zkytDashManifests?.delete(manifestKey)
+        this.manifestMemoryUrl = null
       }
     },
 

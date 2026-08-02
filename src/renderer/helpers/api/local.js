@@ -197,6 +197,13 @@ function isAndroidWebPlayerPreconditionError(error) {
     error.toString().includes('FAILED_PRECONDITION')
 }
 
+function hasPlayableStreamingFormats(info) {
+  return (info.streaming_data?.formats?.length ?? 0) > 0 ||
+    (info.streaming_data?.adaptive_formats?.length ?? 0) > 0 ||
+    !!info.streaming_data?.dash_manifest_url ||
+    !!info.streaming_data?.hls_manifest_url
+}
+
 /** @type {Innertube | null} */
 let searchSuggestionsSession = null
 
@@ -569,6 +576,7 @@ export async function getLocalVideoInfo(id) {
   let info
   const infoOptions = contentPoToken ? { po_token: contentPoToken } : undefined
   let { clientName, clientVersion, osName, osVersion } = webInnertube.session.context.client
+  let playerForDeciphering = webInnertube.session.player
 
   try {
     info = await webInnertube.getInfo(id, infoOptions)
@@ -584,6 +592,7 @@ export async function getLocalVideoInfo(id) {
       clientVersion = androidClient.clientVersion
       osName = androidClient.osName
       osVersion = androidClient.osVersion
+      playerForDeciphering = androidInnertube.session.player
     } else if (
       process.env.IS_TAURI &&
       error.toString().includes('/youtubei/v1/next') &&
@@ -593,6 +602,30 @@ export async function getLocalVideoInfo(id) {
       info = await webInnertube.getBasicInfo(id, infoOptions)
     } else {
       throw error
+    }
+  }
+
+  if (process.env.IS_TAURI && !hasPlayableStreamingFormats(info)) {
+    console.warn('Local API WEB player response had no playable formats, falling back to Android player client')
+    const androidInnertube = await createInnertube({ clientType: ClientType.ANDROID })
+    androidInnertube.session.context.client.visitorData = webInnertube.session.context.client.visitorData
+    const androidInfo = await androidInnertube.getBasicInfo(id)
+
+    if (hasPlayableStreamingFormats(androidInfo)) {
+      info.streaming_data = androidInfo.streaming_data
+      info.playability_status = androidInfo.playability_status
+      info.basic_info.duration = androidInfo.basic_info.duration
+      info.captions = androidInfo.captions
+      info.storyboards = androidInfo.storyboards
+      webInnertube.session.player.po_token = undefined
+      contentPoToken = undefined
+
+      const androidClient = androidInnertube.session.context.client
+      clientName = androidClient.clientName
+      clientVersion = androidClient.clientVersion
+      osName = androidClient.osName
+      osVersion = androidClient.osVersion
+      playerForDeciphering = androidInnertube.session.player
     }
   }
 
@@ -668,7 +701,7 @@ export async function getLocalVideoInfo(id) {
   }
 
   if (info.streaming_data) {
-    const player = webInnertube.session.player
+    const player = playerForDeciphering
 
     await decipherFormats(info.streaming_data.formats, player)
 

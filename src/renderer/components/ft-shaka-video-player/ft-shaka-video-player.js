@@ -44,6 +44,9 @@ const RequestType = shaka.net.NetworkingEngine.RequestType
 const AdvancedRequestType = shaka.net.NetworkingEngine.AdvancedRequestType
 const TrackLabelFormat = shaka.ui.Overlay.TrackLabelFormat
 const { Severity: ErrorSeverity, Category: ErrorCategory, Code: ErrorCode } = shaka.util.Error
+const AbortableOperation = shaka.util.AbortableOperation
+
+let zkytDashManifestSchemeRegistered = false
 
 /*
   Mapping of Shaka localization keys for control labels to FreeTube shortcuts.
@@ -60,6 +63,42 @@ const shakaControlKeysToShortcuts = {
   CAPTIONS: KeyboardShortcuts.VIDEO_PLAYER.GENERAL.CAPTIONS,
   FULL_SCREEN: KeyboardShortcuts.VIDEO_PLAYER.GENERAL.FULLSCREEN,
   EXIT_FULL_SCREEN: KeyboardShortcuts.VIDEO_PLAYER.GENERAL.FULLSCREEN
+}
+
+function registerZkytDashManifestScheme() {
+  if (zkytDashManifestSchemeRegistered || !process.env.IS_TAURI || !navigator.userAgent.includes('Android')) {
+    return
+  }
+
+  shaka.net.NetworkingEngine.registerScheme('zkyt-dash-manifest', (uri, request) => {
+    const manifestKey = new URL(uri).host
+    const manifest = window.__zkytDashManifests?.get(manifestKey)
+
+    if (manifest == null) {
+      return AbortableOperation.failed(new shaka.util.Error(
+        ErrorSeverity.CRITICAL,
+        ErrorCategory.NETWORK,
+        ErrorCode.BAD_HTTP_STATUS,
+        uri,
+        404,
+        null,
+        request
+      ))
+    }
+
+    return AbortableOperation.completed({
+      data: new TextEncoder().encode(manifest),
+      fromCache: true,
+      headers: {
+        'content-type': 'application/dash+xml;charset=UTF-8'
+      },
+      originalRequest: request,
+      originalUri: uri,
+      uri
+    })
+  })
+
+  zkytDashManifestSchemeRegistered = true
 }
 
 /** @type {Map<string, string>} */
@@ -1913,7 +1952,25 @@ export default defineComponent({
 
         activeLegacyFormat.value = event.detail.format
         try {
+          if (process.env.IS_TAURI && navigator.userAgent.includes('Android')) {
+            console.warn('[ZKYT legacy load start]', JSON.stringify({
+              videoId: props.videoId,
+              playbackPosition,
+              mimeType: format.mimeType,
+              itag: format.itag,
+              urlPrefix: format.url?.slice(0, 160)
+            }))
+          }
+
           await player.load(format.url, playbackPosition, format.mimeType)
+
+          if (process.env.IS_TAURI && navigator.userAgent.includes('Android')) {
+            console.warn('[ZKYT legacy load done]', JSON.stringify({
+              videoId: props.videoId,
+              loadMode: player.getLoadMode?.(),
+              manifestLoaded: !!player.getManifest?.()
+            }))
+          }
         } catch (error) {
           handleError(error, 'setLegacyFormat', event.detail)
         }
@@ -2753,6 +2810,8 @@ export default defineComponent({
     onMounted(async () => {
       const videoElement = video.value
 
+      registerZkytDashManifestScheme()
+
       const volume = sessionStorage.getItem('volume')
       if (volume !== null) {
         videoElement.volume = parseFloat(volume)
@@ -2801,6 +2860,15 @@ export default defineComponent({
       if (process.env.SUPPORTS_LOCAL_API) {
         player.getNetworkingEngine().registerRequestFilter(requestFilter)
         player.getNetworkingEngine().registerResponseFilter(responseFilter)
+      }
+
+      if (process.env.IS_TAURI && navigator.userAgent.includes('Android')) {
+        window.__zkytPlayerDebug = {
+          props,
+          player,
+          ui,
+          video: videoElement
+        }
       }
 
       await setLocale(locale.value)
@@ -2920,7 +2988,25 @@ export default defineComponent({
 
       if (props.format === 'dash' || props.format === 'audio') {
         try {
+          if (process.env.IS_TAURI && navigator.userAgent.includes('Android')) {
+            console.warn('[ZKYT player load start]', JSON.stringify({
+              format: props.format,
+              manifestMimeType: props.manifestMimeType,
+              manifestSrcPrefix: props.manifestSrc?.slice(0, 80),
+              videoId: props.videoId
+            }))
+          }
+
           await player.load(props.manifestSrc, props.startTime, props.manifestMimeType)
+
+          if (process.env.IS_TAURI && navigator.userAgent.includes('Android')) {
+            console.warn('[ZKYT player load done]', JSON.stringify({
+              loadMode: player.getLoadMode?.(),
+              manifestLoaded: !!player.getManifest?.(),
+              variantCount: player.getVariantTracks?.().length,
+              videoId: props.videoId
+            }))
+          }
 
           if (defaultQuality.value !== 'auto') {
             if (props.format === 'dash') {

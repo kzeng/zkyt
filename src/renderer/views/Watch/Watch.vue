@@ -17,7 +17,7 @@
     >
       <div class="videoAreaMargin">
         <ft-shaka-video-player
-          v-if="!isLoading && (!isUpcoming || playabilityStatus === 'OK') && !errorMessage"
+          v-if="!isLoading && hasPlayableSource && (!isUpcoming || playabilityStatus === 'OK') && !errorMessage"
           ref="player"
           :manifest-src="manifestSrc"
           :manifest-mime-type="manifestMimeType"
@@ -57,11 +57,19 @@
           @player-reload-requested="onPlayerReloadRequested"
         />
         <div
-          v-if="!isLoading && (isUpcoming || errorMessage)"
+          v-if="!isLoading && (isUpcoming || errorMessage || !hasPlayableSource)"
           class="videoPlayer"
         >
+          <iframe
+            v-if="useAndroidEmbedFallback"
+            class="androidEmbedPlayer"
+            :src="youtubeEmbedSrc"
+            :title="videoTitle"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+          />
           <img
-            v-if="!isUpcoming || playabilityStatus !== 'OK'"
+            v-else-if="!isUpcoming || playabilityStatus !== 'OK'"
             :src="thumbnail"
             class="videoThumbnail"
             alt=""
