@@ -35,6 +35,9 @@ locale-errors.json
 # token scope to push, so keep them out of this migration snapshot.
 .github/workflows/
 
+# Local backup of the upstream FreeTube repository metadata.
+.git.freetube-backup/
+
 # Tauri / Rust
 src-tauri/target/
 src-tauri/.tauri/
