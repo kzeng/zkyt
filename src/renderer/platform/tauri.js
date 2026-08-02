@@ -4,6 +4,47 @@ const invokeDb = (store, action, data) => {
   return invoke('db_request', { store, action, data })
 }
 
+const androidHttpBridge = () => window.ZkytAndroidHttp
+
+const androidHttpRequest = async (payload) => {
+  const bridge = androidHttpBridge()
+
+  if (!bridge) {
+    return await invoke('http_request', { payload })
+  }
+
+  const response = JSON.parse(bridge.request(JSON.stringify(payload)))
+
+  if (response.error) {
+    throw new Error(response.error)
+  }
+
+  return response
+}
+
+const httpGetJson = async (url, authorization = null) => {
+  const headers = {
+    accept: 'application/json'
+  }
+
+  if (authorization) {
+    headers.authorization = authorization
+  }
+
+  const response = await androidHttpRequest({
+    url: url.toString(),
+    method: 'GET',
+    headers,
+    body: null
+  })
+
+  if (response.status < 200 || response.status > 299) {
+    throw new Error(`HTTP ${response.status}: ${response.body.slice(0, 800)}`)
+  }
+
+  return JSON.parse(response.body)
+}
+
 export default {
   getSystemLocale: () => invoke('get_system_locale'),
   isWaylandPlatform: async () => false,
@@ -34,8 +75,8 @@ export default {
   relaunch: () => invoke('relaunch_app'),
   openInExternalPlayer: (payload) => invoke('open_in_external_player', { payload }),
   handleOpenInExternalPlayerResult: () => {},
-  httpRequest: (payload) => invoke('http_request', { payload }),
-  httpGetJson: (url, authorization = null) => invoke('http_get_json', { url: url.toString(), authorization }),
+  httpRequest: androidHttpRequest,
+  httpGetJson,
   setZoomFactor: () => {},
   getNavigationHistory: async () => [],
   dbSettings: (action, data) => invokeDb('settings', action, data),

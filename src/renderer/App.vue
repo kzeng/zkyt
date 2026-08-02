@@ -187,18 +187,15 @@ onMounted(async () => {
   updateTheme()
 
   await store.dispatch('fetchInvidiousInstancesFromFile')
-  if (process.env.IS_TAURI && !invidiousInstancesList.value.includes(defaultInvidiousInstance.value)) {
+  const configuredDefaultInvidiousInstance = defaultInvidiousInstance.value ?? ''
+  if (process.env.IS_TAURI && configuredDefaultInvidiousInstance !== '' && !invidiousInstancesList.value.includes(configuredDefaultInvidiousInstance)) {
     await store.dispatch('updateDefaultInvidiousInstance', '')
   }
 
-  if (defaultInvidiousInstance.value === '') {
-    await store.dispatch('setRandomCurrentInvidiousInstance')
-  }
+  await store.dispatch('ensureCurrentInvidiousInstance', store.getters.getDefaultInvidiousInstance ?? '')
 
   store.dispatch('fetchInvidiousInstances').then(() => {
-    if (defaultInvidiousInstance.value === '') {
-      store.dispatch('setRandomCurrentInvidiousInstance')
-    }
+    store.dispatch('ensureCurrentInvidiousInstance', store.getters.getDefaultInvidiousInstance ?? '')
   })
 
   store.dispatch('grabAllProfiles', t('Profile.All Channels')).then(() => {

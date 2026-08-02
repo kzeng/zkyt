@@ -42,6 +42,10 @@ const actions = {
 
   /// fetch invidious instances from site and overwrite static file.
   async fetchInvidiousInstances({ commit }) {
+    if (process.env.IS_TAURI) {
+      return
+    }
+
     const requestUrl = 'https://api.invidious.io/instances.json'
     try {
       const json = process.env.IS_TAURI
@@ -71,8 +75,33 @@ const actions = {
   },
 
   setRandomCurrentInvidiousInstance({ commit, state }) {
-    const instanceList = state.invidiousInstancesList
+    const instanceList = state.invidiousInstancesList ?? []
+
+    if (instanceList.length === 0) {
+      commit('setCurrentInvidiousInstance', '')
+      return
+    }
+
     commit('setCurrentInvidiousInstance', randomArrayItem(instanceList))
+  },
+
+  ensureCurrentInvidiousInstance({ commit, state }, preferredInstance = '') {
+    const instanceList = state.invidiousInstancesList ?? []
+
+    if (instanceList.length === 0) {
+      commit('setCurrentInvidiousInstance', '')
+      return
+    }
+
+    if (state.currentInvidiousInstance !== '' && instanceList.includes(state.currentInvidiousInstance)) {
+      return
+    }
+
+    const nextInstance = instanceList.includes(preferredInstance)
+      ? preferredInstance
+      : instanceList[0]
+
+    commit('setCurrentInvidiousInstance', nextInstance)
   }
 }
 

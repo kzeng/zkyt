@@ -882,7 +882,7 @@ async fn http_request(payload: HttpRequestPayload) -> Result<HttpResponsePayload
         .map_err(|error| error.to_string())?;
 
     let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(20))
+        .timeout(Duration::from_secs(12))
         .user_agent("ZKYT Tauri Android")
         .build()
         .map_err(|error| error.to_string())?;
@@ -947,7 +947,7 @@ async fn http_get_json(url: String, authorization: Option<String>) -> Result<Val
     }
 
     let client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(20))
+        .timeout(Duration::from_secs(12))
         .user_agent("ZKYT Tauri Android")
         .build()
         .map_err(|error| error.to_string())?;

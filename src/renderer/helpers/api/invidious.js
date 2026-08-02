@@ -1,6 +1,6 @@
 import store from '../../store/index'
 import platform from '../../platform'
-import { calculatePublishedDate, getRelativeTimeFromDate } from '../utils'
+import { calculatePublishedDate, fetchWithTimeout, getRelativeTimeFromDate } from '../utils'
 import { isNullOrEmpty } from '../strings'
 import autolinker from 'autolinker'
 import { FormatUtils, Misc, Player } from 'youtubei.js'
@@ -16,7 +16,21 @@ import { FormatUtils, Misc, Player } from 'youtubei.js'
  * @returns {string}
  */
 function getCurrentInstanceUrl() {
-  return store.getters.getCurrentInvidiousInstanceUrl
+  const currentInstanceUrl = store.getters.getCurrentInvidiousInstanceUrl
+
+  if (!isNullOrEmpty(currentInstanceUrl)) {
+    return currentInstanceUrl
+  }
+
+  const instances = store.getters.getInvidiousInstancesList ?? []
+  const fallbackInstance = instances[0] ?? ''
+
+  if (!isNullOrEmpty(fallbackInstance)) {
+    store.commit('setCurrentInvidiousInstance', fallbackInstance)
+    return store.getters.getCurrentInvidiousInstanceUrl
+  }
+
+  return ''
 }
 
 /**
@@ -57,7 +71,14 @@ function invidiousAPICall({ resource, id = '', params = {}, doLogError = true, s
       return instanceUrl + '/api/v1/' + resource + '/' + id + (!isNullOrEmpty(subResource) ? `/${subResource}` : '') + '?' + new URLSearchParams(params).toString()
     }
 
-    const requestUrl = buildRequestUrl(getCurrentInstanceUrl())
+    const currentInstanceUrl = getCurrentInstanceUrl()
+
+    if (isNullOrEmpty(currentInstanceUrl)) {
+      reject(new Error('No Invidious instance is configured'))
+      return
+    }
+
+    const requestUrl = buildRequestUrl(currentInstanceUrl)
 
     const response = process.env.IS_TAURI
       ? getTauriInvidiousJson(requestUrl, buildRequestUrl, fallbackOnEmptyArray)
@@ -90,6 +111,18 @@ function shouldUseFallbackJson(json, fallbackOnEmptyArray) {
 }
 
 async function getTauriInvidiousJson(requestUrl, buildRequestUrl, fallbackOnEmptyArray) {
+  if (process.env.SUPPORTS_LOCAL_API) {
+    try {
+      return await getBrowserInvidiousJsonWithFallback(requestUrl, buildRequestUrl, fallbackOnEmptyArray)
+    } catch (error) {
+      console.warn('Invidious browser API path failed, falling back to native platform HTTP', error)
+    }
+  }
+
+  return await getNativeTauriInvidiousJson(requestUrl, buildRequestUrl, fallbackOnEmptyArray)
+}
+
+async function getNativeTauriInvidiousJson(requestUrl, buildRequestUrl, fallbackOnEmptyArray) {
   const authorization = store.getters.getCurrentInvidiousInstanceAuthorization
   const currentInstance = getCurrentInstanceUrl()
 
@@ -144,6 +177,68 @@ async function getTauriInvidiousJson(requestUrl, buildRequestUrl, fallbackOnEmpt
   }
 
   return []
+}
+
+async function getBrowserInvidiousJsonWithFallback(requestUrl, buildRequestUrl, fallbackOnEmptyArray) {
+  const currentInstance = getCurrentInstanceUrl()
+  let initialError = null
+
+  try {
+    const json = await getBrowserInvidiousJson(requestUrl)
+
+    if (!shouldUseFallbackJson(json, fallbackOnEmptyArray)) {
+      return json
+    }
+
+    console.error('Invidious API empty browser response, trying fallback instances', currentInstance, requestUrl)
+  } catch (error) {
+    initialError = error
+    console.error('Invidious API browser error, trying fallback instances', currentInstance, requestUrl, error)
+  }
+
+  const instances = store.getters.getInvidiousInstancesList ?? []
+
+  for (const instance of instances) {
+    if (instance === currentInstance) {
+      continue
+    }
+
+    try {
+      const json = await getBrowserInvidiousJson(buildRequestUrl(instance))
+
+      if (shouldUseFallbackJson(json, fallbackOnEmptyArray)) {
+        console.error('Invidious API browser fallback returned empty response', instance)
+        continue
+      }
+
+      store.commit('setCurrentInvidiousInstance', instance)
+      return json
+    } catch (fallbackError) {
+      console.error('Invidious API browser fallback error', instance, fallbackError)
+    }
+  }
+
+  if (initialError !== null) {
+    throw initialError
+  }
+
+  return []
+}
+
+async function getBrowserInvidiousJson(requestUrl) {
+  const authorization = store.getters.getCurrentInvidiousInstanceAuthorization
+  const headers = authorization
+    ? { Authorization: authorization }
+    : undefined
+
+  const response = await fetchWithTimeout(12_000, requestUrl, { headers })
+  const responseText = await response.text()
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${responseText.slice(0, 800)}`)
+  }
+
+  return JSON.parse(responseText)
 }
 
 async function resolveUrl(url) {
@@ -635,11 +730,11 @@ export async function getInvidiousSearchResults(query, page, searchSettings) {
   }
 
   results = results.filter((item) => {
-    return item.type === 'video' || item.type === 'channel' || item.type === 'playlist' || item.type === 'hashtag'
+    return item.type === 'video' || item.type === 'shortVideo' || item.type === 'channel' || item.type === 'playlist' || item.type === 'hashtag'
   })
 
   results.forEach((item) => {
-    if (item.type === 'video') {
+    if (item.type === 'video' || item.type === 'shortVideo') {
       normalizeOneInvidiousVideoAttributes(item)
       setPublishedTimestamp(item)
     }
