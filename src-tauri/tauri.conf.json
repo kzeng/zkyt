@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "FreeTube",
+  "productName": "ZKYT",
   "version": "0.25.1",
-  "identifier": "io.freetubeapp.freetube",
+  "identifier": "com.kzeng.zkyt",
   "build": {
     "beforeDevCommand": "corepack pnpm run dev:tauri-renderer",
     "beforeBuildCommand": "corepack pnpm run pack:tauri",
@@ -13,7 +13,7 @@
     "withGlobalTauri": false,
     "windows": [
       {
-        "title": "FreeTube",
+        "title": "ZKYT",
         "width": 1280,
         "height": 800,
         "resizable": true,

@@ -118,7 +118,22 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
   - `src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk`
   - Signature verification passes with Android debug certificate and APK Signature Scheme v2.
   - `aapt` reports `native-code: 'arm64-v8a'`, which matches Pixel 9 Pro.
-- `adb devices -l` could not see a connected device in this session, so direct device install verification is still pending.
+- `adb devices -l` detected the connected Pixel device and local install verification now passes.
+- Renamed the Android/Tauri app identity for the ZKYT fork:
+  - Tauri `productName`: `ZKYT`
+  - Tauri/Android identifier: `com.kzeng.zkyt`
+  - Android launcher labels: `ZKYT`
+  - Android `MainActivity` package: `com.kzeng.zkyt`
+- Fixed the first-launch Android black screen after the ZKYT rename:
+  - WebView DevTools showed that the Vue app mounted to an empty comment node because JSON bootstrap requests returned the SPA fallback HTML.
+  - Affected URLs included `/static/locales/*.json`, `/static/invidious-instances.json`, and `/static/geolocations/*.json`.
+  - The Tauri renderer webpack config now disables locale JSON compression and copies the required static JSON files into `dist`.
+  - A full `dist` and `src-tauri/target` cleanup was required so Tauri/Cargo embedded the corrected static assets into the Android library.
+- Rebuilt and reinstalled the debug APK on the connected Pixel device after the asset fix.
+- Verified the ZKYT Android app opens and renders the FreeTube UI instead of a black screen.
+- Observed a separate runtime toast after launch:
+  - `Invidious API错误（点击复制）: TypeError: Failed to fetch`
+  - This is a network/API request issue after rendering succeeds, not the black screen root cause.
 
 ### Current Limitations
 
@@ -135,7 +150,7 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
 ### Next Steps
 
 - Decide how to handle Android signing keys and release-channel metadata.
-- Connect a Pixel device with USB debugging enabled and run `adb install -r src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk` to verify the first launch path.
+- Investigate the remaining Android Invidious `Failed to fetch` network/API error.
 - Replace the JSON document store with SQLite once the Tauri runtime can launch reliably.
 - Add a mobile-specific renderer build flag and progressively hide desktop-only settings on Android.
 - Build the Android watch-page shell and verify WebView playback behavior with Shaka Player.
