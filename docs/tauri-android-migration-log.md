@@ -169,6 +169,7 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
 - Fixed the Settings navigation entry after replacing the mobile More tab. The `/settings` route and page were still present, but the visible entry was mobile-only while the old More component was hidden by breakpoint CSS. The Settings entry is now a direct side navigation item across desktop and mobile layouts.
 - Reworked the mobile bottom navigation into stable first-level items: Subscriptions, Channels, Most Popular, Playlists, and Settings. History remains available in the desktop side navigation, and the Local-API Trending entry is hidden from the mobile tab bar to avoid presenting an empty first-level page when YouTube browse parsing fails.
 - Removed the Trending navigation entry entirely and redirected `/trending` to `/popular` so the app no longer exposes the unstable Local API trending page.
+- Split the phone bottom tab bar from the desktop side navigation DOM. Mobile now renders a dedicated fixed five-tab bar with Settings as the last tab, avoiding portrait layout clipping from desktop-only separators and conditional side-nav entries.
 - Adjusted the Subscriptions page tab bar so Videos, Shorts, Live, and Posts stay on one row. On narrow screens the row can scroll horizontally instead of wrapping.
 
 ### Current Limitations

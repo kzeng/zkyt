@@ -21,6 +21,10 @@
   overflow: hidden auto;
 }
 
+.mobileNav {
+  display: none;
+}
+
 .topNavOption {
   margin-block-start: 10px;
 }
@@ -221,10 +225,7 @@
 
 @media only screen and (width <= 960px) {
   .inner {
-    align-items: stretch;
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    inline-size: 100%;
+    display: none;
   }
 
   hr,
@@ -236,14 +237,64 @@
   .sideNav {
     inset-inline-start: 0;
     position: fixed;
-    display: flex;
+    display: block;
     margin-block-start: 0;
-    block-size: 72px;
+    block-size: calc(72px + max(6px, env(safe-area-inset-bottom)));
     inline-size: 100%;
     inset-block: auto 0;
-    overflow-y: hidden;
+    overflow: hidden;
     box-shadow: 0 -1px 12px rgb(0 0 0 / 22%);
     padding-block-end: max(6px, env(safe-area-inset-bottom));
+  }
+
+  .mobileNav {
+    block-size: 72px;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    inline-size: 100%;
+  }
+
+  .mobileNavOption {
+    align-items: center;
+    block-size: 72px;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    justify-content: center;
+    min-inline-size: 0;
+    padding-block: 7px;
+    padding-inline: 2px;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobileNavOption:hover {
+    background-color: var(--side-nav-hover-color);
+    color: var(--side-nav-hover-text-color);
+  }
+
+  .mobileNavOption:active,
+  .mobileNavOption.router-link-active {
+    background-color: var(--side-nav-active-color);
+    color: var(--side-nav-active-text-color);
+  }
+
+  .mobileNavIcon {
+    block-size: 22px;
+    flex: 0 0 22px;
+    inline-size: 22px;
+  }
+
+  .mobileNavLabel {
+    display: block;
+    font-size: 12px;
+    inline-size: 100%;
+    line-height: 1.2;
+    overflow: hidden;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .topNavOption {

@@ -178,6 +178,68 @@
         </router-link>
       </div>
     </div>
+    <div class="mobileNav">
+      <router-link
+        class="mobileNavOption"
+        role="button"
+        to="/subscriptions"
+        :title="$t('Subscriptions.Subscriptions')"
+      >
+        <FontAwesomeIcon
+          :icon="['fas', 'rss']"
+          class="mobileNavIcon"
+        />
+        <span class="mobileNavLabel">{{ $t("Subscriptions.Subscriptions") }}</span>
+      </router-link>
+      <router-link
+        class="mobileNavOption"
+        role="button"
+        to="/subscribedchannels"
+        :title="$t('Channels.Channels')"
+      >
+        <FontAwesomeIcon
+          :icon="['fas', 'user-check']"
+          class="mobileNavIcon"
+        />
+        <span class="mobileNavLabel">{{ $t("Channels.Channels") }}</span>
+      </router-link>
+      <router-link
+        class="mobileNavOption"
+        role="button"
+        to="/popular"
+        :title="$t('Most Popular')"
+      >
+        <FontAwesomeIcon
+          :icon="['fas', 'users']"
+          class="mobileNavIcon"
+        />
+        <span class="mobileNavLabel">{{ $t("Most Popular") }}</span>
+      </router-link>
+      <router-link
+        class="mobileNavOption"
+        role="button"
+        to="/userplaylists"
+        :title="$t('Playlists')"
+      >
+        <FontAwesomeIcon
+          :icon="['fas', 'bookmark']"
+          class="mobileNavIcon"
+        />
+        <span class="mobileNavLabel">{{ $t("Playlists") }}</span>
+      </router-link>
+      <router-link
+        class="mobileNavOption"
+        role="button"
+        to="/settings"
+        :title="settingsTitle"
+      >
+        <FontAwesomeIcon
+          :icon="['fas', 'sliders-h']"
+          class="mobileNavIcon"
+        />
+        <span class="mobileNavLabel">{{ $t('Settings.Settings') }}</span>
+      </router-link>
+    </div>
   </FtFlexBox>
 </template>
 
