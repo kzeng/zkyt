@@ -179,8 +179,8 @@ onMounted(async () => {
       await store.dispatch('updateBackendPreference', 'invidious')
     }
 
-    if (!store.getters.getBackendFallback) {
-      await store.dispatch('updateBackendFallback', true)
+    if (store.getters.getBackendFallback) {
+      await store.dispatch('updateBackendFallback', false)
     }
   }
 

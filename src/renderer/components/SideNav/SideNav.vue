@@ -51,28 +51,6 @@
         </p>
       </router-link>
       <router-link
-        v-if="SUPPORTS_LOCAL_API && !hideTrendingVideos && (backendFallback || backendPreference === 'local')"
-        class="navOption mobileHidden"
-        role="button"
-        to="/trending"
-        :title="$t('Trending.Trending')"
-      >
-        <div
-          class="thumbnailContainer"
-        >
-          <FontAwesomeIcon
-            :icon="['fas', 'fire']"
-            class="navIcon"
-            :class="applyNavIconExpand"
-          />
-        </div>
-        <p
-          class="navLabel"
-        >
-          {{ $t("Trending.Trending") }}
-        </p>
-      </router-link>
-      <router-link
         v-if="!hidePopularVideos && (backendFallback || backendPreference === 'invidious')"
         class="navOption"
         role="button"
@@ -218,8 +196,6 @@ import { KeyboardShortcuts } from '../../../constants'
 
 const { locale, t } = useI18n()
 
-const SUPPORTS_LOCAL_API = process.env.SUPPORTS_LOCAL_API
-
 /** @type {import('vue').ComputedRef<boolean>} */
 const isOpen = computed(() => {
   return store.getters.getIsSideNavOpen
@@ -279,11 +255,6 @@ const hidePopularVideos = computed(() => {
 /** @type {import('vue').ComputedRef<boolean>} */
 const hidePlaylists = computed(() => {
   return store.getters.getHidePlaylists
-})
-
-/** @type {import('vue').ComputedRef<boolean>} */
-const hideTrendingVideos = computed(() => {
-  return store.getters.getHideTrendingVideos
 })
 
 /** @type {import('vue').ComputedRef<boolean>} */

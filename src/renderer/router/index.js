@@ -2,7 +2,6 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import Subscriptions from '../views/Subscriptions/Subscriptions.vue'
 import SubscribedChannels from '../views/SubscribedChannels/SubscribedChannels.vue'
 import ProfileSettings from '../views/ProfileSettings/ProfileSettings.vue'
-import Trending from '../views/Trending/Trending.vue'
 import Popular from '../views/Popular/Popular.vue'
 import UserPlaylists from '../views/UserPlaylists/UserPlaylists.vue'
 import History from '../views/History/History.vue'
@@ -41,16 +40,10 @@ const router = createRouter({
       },
       component: SubscribedChannels
     },
-    ...(process.env.SUPPORTS_LOCAL_API
-      ? [{
-          path: '/trending',
-          name: 'trending',
-          meta: {
-            title: 'Trending'
-          },
-          component: Trending
-        }]
-      : []),
+    {
+      path: '/trending',
+      redirect: '/popular'
+    },
     {
       path: '/popular',
       name: 'popular',
