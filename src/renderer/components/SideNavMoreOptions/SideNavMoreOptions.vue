@@ -96,26 +96,6 @@
         </p>
       </router-link>
       <router-link
-        class="navOption"
-        :title="$t('About.About')"
-        :aria-label="hideLabelsSideBar ? $t('About.About') : null"
-        to="/about"
-        @click="closeMenu"
-      >
-        <FontAwesomeIcon
-          :icon="['fas', 'info-circle']"
-          class="navIcon"
-          :class="applyNavIconExpand"
-        />
-        <p
-          v-if="!hideLabelsSideBar"
-          id="aboutNavLabel"
-          class="navLabel"
-        >
-          {{ $t("About.About") }}
-        </p>
-      </router-link>
-      <router-link
         class="navOption smallMobileOnlyShow"
         :title="$t('Settings.Settings')"
         :aria-label="hideLabelsSideBar ? $t('Settings.Settings') : null"
@@ -170,24 +150,6 @@
         class="navLabel"
       >
         {{ $t("Settings.Settings") }}
-      </p>
-    </router-link>
-    <router-link
-      class="navOption mobileHidden"
-      :title="$t('About.About')"
-      to="/about"
-      :aria-label="hideLabelsSideBar ? $t('About.About') : null"
-    >
-      <FontAwesomeIcon
-        :icon="['fas', 'info-circle']"
-        class="navIcon"
-        :class="applyNavIconExpand"
-      />
-      <p
-        v-if="!hideLabelsSideBar"
-        class="navLabel"
-      >
-        {{ $t("About.About") }}
       </p>
     </router-link>
   </div>

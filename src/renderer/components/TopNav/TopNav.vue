@@ -308,10 +308,15 @@ const activeDataListProperties = computed(() => {
 const isArrowBackwardDisabled = ref(true)
 const isArrowForwardDisabled = ref(true)
 
-if (process.env.IS_ELECTRON || 'navigation' in window) {
+if (process.env.IS_ELECTRON) {
   watch(route, () => {
     setNavigationHistoryDropdownOptions()
-
+  }, { deep: true })
+} else if (process.env.IS_TAURI) {
+  isArrowBackwardDisabled.value = false
+  isArrowForwardDisabled.value = false
+} else if ('navigation' in window) {
+  watch(route, () => {
     isArrowForwardDisabled.value = !window.navigation.canGoForward
     isArrowBackwardDisabled.value = !window.navigation.canGoBack
   }, { deep: true })
@@ -587,6 +592,13 @@ function removeSearchHistoryEntryInDbAndCache(query) {
 
 function toggleSearchContainer() {
   showSearchContainer.value = !showSearchContainer.value
+
+  if (showSearchContainer.value) {
+    nextTick(() => {
+      searchInput.value?.focus()
+      searchInput.value?.select()
+    })
+  }
 }
 
 /**

@@ -134,6 +134,12 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
 - Observed a separate runtime toast after launch:
   - `Invidious API错误（点击复制）: TypeError: Failed to fetch`
   - This is a network/API request issue after rendering succeeds, not the black screen root cause.
+- Removed the FreeTube About page and all side navigation entries that linked to it for the ZKYT fork.
+- Cleared `README.md`.
+- Updated the bundled Invidious static instance list after API testing showed several old entries timing out, returning 401, or showing bot checks. The initial Tauri/Android instance list now starts with `https://inv.zoomerville.com`.
+- Adjusted Tauri top navigation behavior:
+  - Back and forward buttons no longer rely on Android WebView's Navigation API state.
+  - The search icon now expands and focuses the search input on mobile.
 
 ### Current Limitations
 
@@ -150,7 +156,7 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
 ### Next Steps
 
 - Decide how to handle Android signing keys and release-channel metadata.
-- Investigate the remaining Android Invidious `Failed to fetch` network/API error.
+- Verify the Android Invidious request path on-device after the instance list update.
 - Replace the JSON document store with SQLite once the Tauri runtime can launch reliably.
 - Add a mobile-specific renderer build flag and progressively hide desktop-only settings on Android.
 - Build the Android watch-page shell and verify WebView playback behavior with Shaka Player.
