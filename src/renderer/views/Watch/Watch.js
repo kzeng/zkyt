@@ -86,6 +86,7 @@ export default defineComponent({
     if (this.$refs.player) {
       await this.destroyPlayer()
     }
+    this.revokeManifestObjectUrl()
 
     next()
   },
@@ -137,6 +138,8 @@ export default defineComponent({
       videoStoryboardSrc: '',
       /** @type {string|null} */
       manifestSrc: null,
+      /** @type {string|null} */
+      manifestObjectUrl: null,
       /** @type {(MANIFEST_TYPE_DASH|MANIFEST_TYPE_HLS|MANIFEST_TYPE_SABR)} */
       manifestMimeType: MANIFEST_TYPE_DASH,
       /** @type {SabrData | null} */
@@ -414,6 +417,7 @@ export default defineComponent({
       this.videoPublished = 0
       this.premiereDate = undefined
       this.videoStoryboardSrc = ''
+      this.revokeManifestObjectUrl()
       this.manifestSrc = null
       this.manifestMimeType = MANIFEST_TYPE_DASH
       this.sabrData = null
@@ -1655,7 +1659,26 @@ export default defineComponent({
         })
       ])
 
-      return `data:application/dash+xml;charset=UTF-8,${encodeURIComponent(xmlData)}`
+      return this.createManifestUrl(xmlData, MANIFEST_TYPE_DASH)
+    },
+
+    createManifestUrl: function (manifest, mimeType) {
+      if (process.env.IS_TAURI && navigator.userAgent.includes('Android')) {
+        this.revokeManifestObjectUrl()
+        this.manifestObjectUrl = URL.createObjectURL(new Blob([manifest], {
+          type: `${mimeType};charset=UTF-8`
+        }))
+        return this.manifestObjectUrl
+      }
+
+      return `data:${mimeType};charset=UTF-8,${encodeURIComponent(manifest)}`
+    },
+
+    revokeManifestObjectUrl: function () {
+      if (this.manifestObjectUrl !== null) {
+        URL.revokeObjectURL(this.manifestObjectUrl)
+        this.manifestObjectUrl = null
+      }
     },
 
     /**
@@ -1757,7 +1780,7 @@ export default defineComponent({
 
         const manifest = await generateInvidiousDashManifestLocally(formats)
 
-        url = `data:application/dash+xml;charset=UTF-8,${encodeURIComponent(manifest)}`
+        url = this.createManifestUrl(manifest, MANIFEST_TYPE_DASH)
       } else if (this.proxyVideos) {
         url += '?local=true'
       }

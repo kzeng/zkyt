@@ -1543,21 +1543,27 @@ export default defineComponent({
       /** @type {object[]} */
       const legacyFormats = props.legacyFormats
 
+      if (legacyFormats.length === 0) {
+        handleError(new Error('No legacy formats available'), 'setLegacyQuality')
+        return
+      }
+
       const isPortrait = legacyFormats[0].height > legacyFormats[0].width
+      const getResolution = (variant) => isPortrait ? variant.width : variant.height
 
       let matches = legacyFormats.filter(variant => {
-        return previousQuality === isPortrait ? variant.width : variant.height
+        return previousQuality === getResolution(variant)
       })
 
       if (matches.length === 0) {
         matches = legacyFormats.filter(variant => {
-          return previousQuality > isPortrait ? variant.width : variant.height
+          return previousQuality > getResolution(variant)
         })
 
         if (matches.length > 0) {
           matches.sort((a, b) => b.bitrate - a.bitrate)
         } else {
-          matches = legacyFormats.sort((a, b) => a.bitrate - b.bitrate)
+          matches = [...legacyFormats].sort((a, b) => a.bitrate - b.bitrate)
         }
       }
 
