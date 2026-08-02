@@ -103,7 +103,21 @@ async function fetchPopularInfo() {
 }
 
 async function getPopularFeed() {
-  if (process.env.SUPPORTS_LOCAL_API && (backendPreference.value === 'local' || process.env.IS_TAURI)) {
+  if (backendPreference.value === 'invidious') {
+    try {
+      const items = await getInvidiousPopularFeed()
+      if (items.length > 0 || !backendFallback.value || !process.env.SUPPORTS_LOCAL_API) {
+        return items
+      }
+    } catch (error) {
+      console.warn('Invidious popular feed failed, falling back to Local API', error)
+      if (!backendFallback.value || !process.env.SUPPORTS_LOCAL_API) {
+        throw error
+      }
+    }
+  }
+
+  if (process.env.SUPPORTS_LOCAL_API) {
     try {
       const items = await getLocalTrending(region.value)
       if (items.length > 0 || !backendFallback.value) {

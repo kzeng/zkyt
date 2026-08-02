@@ -30,7 +30,7 @@
         </p>
       </router-link>
       <router-link
-        class="navOption mobileHidden"
+        class="navOption"
         role="button"
         to="/subscribedchannels"
         :title="$t('Channels.Channels')"
@@ -74,7 +74,7 @@
       </router-link>
       <router-link
         v-if="!hidePopularVideos && (backendFallback || backendPreference === 'invidious')"
-        class="navOption mobileHidden"
+        class="navOption"
         role="button"
         to="/popular"
         :title="$t('Most Popular')"
@@ -117,7 +117,7 @@
         </p>
       </router-link>
       <router-link
-        class="navOption mobileShow"
+        class="navOption mobileHidden"
         role="button"
         to="/history"
         :title="historyTitle"
@@ -139,7 +139,7 @@
       </router-link>
       <hr>
       <router-link
-        class="navOption"
+        class="navOption mobileShow"
         role="button"
         to="/settings"
         :title="settingsTitle"

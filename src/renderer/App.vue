@@ -175,8 +175,8 @@ onMounted(async () => {
   await store.dispatch('grabUserSettings')
 
   if (process.env.IS_TAURI && process.env.SUPPORTS_LOCAL_API) {
-    if (store.getters.getBackendPreference !== 'local') {
-      await store.dispatch('updateBackendPreference', 'local')
+    if (store.getters.getBackendPreference !== 'invidious') {
+      await store.dispatch('updateBackendPreference', 'invidious')
     }
 
     if (!store.getters.getBackendFallback) {
