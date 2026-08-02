@@ -140,6 +140,10 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
 - Adjusted Tauri top navigation behavior:
   - Back and forward buttons no longer rely on Android WebView's Navigation API state.
   - The search icon now expands and focuses the search input on mobile.
+- Fixed two follow-up Android issues:
+  - Removed Android `enableEdgeToEdge()` from `MainActivity` because it placed the WebView top navigation under the system status bar, making the visible top icons hard or impossible to tap.
+  - Tauri startup now clears a persisted default Invidious instance when it is no longer present in the bundled usable instance list, then falls back to the bundled instance.
+- Added a Tauri-native HTTPS JSON fetch command and moved Invidious API JSON calls through it on Tauri/Android. This avoids Android WebView CORS failures such as `No 'Access-Control-Allow-Origin' header` on otherwise reachable Invidious API endpoints.
 
 ### Current Limitations
 

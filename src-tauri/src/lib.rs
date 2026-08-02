@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Mutex;
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
@@ -835,6 +836,39 @@ fn open_in_external_player(_payload: ExternalPlayerPayload) -> Result<(), String
 }
 
 #[tauri::command]
+async fn http_get_json(url: String, authorization: Option<String>) -> Result<Value, String> {
+    let parsed_url = reqwest::Url::parse(&url).map_err(|error| error.to_string())?;
+
+    if parsed_url.scheme() != "https" {
+        return Err("only https URLs are allowed".to_owned());
+    }
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(20))
+        .user_agent("ZKYT Tauri Android")
+        .build()
+        .map_err(|error| error.to_string())?;
+
+    let mut request = client
+        .get(parsed_url)
+        .header(reqwest::header::ACCEPT, "application/json");
+
+    if let Some(authorization) = authorization {
+        request = request.header(reqwest::header::AUTHORIZATION, authorization);
+    }
+
+    let response = request.send().await.map_err(|error| error.to_string())?;
+    let status = response.status();
+    let text = response.text().await.map_err(|error| error.to_string())?;
+
+    if !status.is_success() {
+        return Err(format!("HTTP {status}: {text}"));
+    }
+
+    serde_json::from_str(&text).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
 fn db_request(
     app: AppHandle,
     db_lock: State<DbLock>,
@@ -881,6 +915,7 @@ pub fn run() {
             generate_po_token,
             relaunch_app,
             open_in_external_player,
+            http_get_json,
             db_request,
         ])
         .run(tauri::generate_context!())

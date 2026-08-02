@@ -44,8 +44,9 @@ const actions = {
   async fetchInvidiousInstances({ commit }) {
     const requestUrl = 'https://api.invidious.io/instances.json'
     try {
-      const response = await fetchWithTimeout(15_000, requestUrl)
-      const json = await response.json()
+      const json = process.env.IS_TAURI
+        ? await platform.httpGetJson(requestUrl)
+        : await (await fetchWithTimeout(15_000, requestUrl)).json()
       const instances = json.filter((instance) => {
         return !(instance[0].includes('.onion') ||
           instance[0].includes('.i2p') ||

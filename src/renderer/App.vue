@@ -164,6 +164,8 @@ const landingPage = computed(() => '/' + store.getters.getLandingPage)
 
 /** @type {import('vue').ComputedRef<string>} */
 const defaultInvidiousInstance = computed(() => store.getters.getDefaultInvidiousInstance)
+/** @type {import('vue').ComputedRef<string[]>} */
+const invidiousInstancesList = computed(() => store.getters.getInvidiousInstancesList ?? [])
 
 const dataReady = ref(false)
 
@@ -173,6 +175,10 @@ onMounted(async () => {
   updateTheme()
 
   await store.dispatch('fetchInvidiousInstancesFromFile')
+  if (process.env.IS_TAURI && !invidiousInstancesList.value.includes(defaultInvidiousInstance.value)) {
+    await store.dispatch('updateDefaultInvidiousInstance', '')
+  }
+
   if (defaultInvidiousInstance.value === '') {
     await store.dispatch('setRandomCurrentInvidiousInstance')
   }

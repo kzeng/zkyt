@@ -1,4 +1,5 @@
 import store from '../../store/index'
+import platform from '../../platform'
 import { calculatePublishedDate, getRelativeTimeFromDate } from '../utils'
 import { isNullOrEmpty } from '../strings'
 import autolinker from 'autolinker'
@@ -53,8 +54,11 @@ export function invidiousFetch(url) {
 function invidiousAPICall({ resource, id = '', params = {}, doLogError = true, subResource = '' }) {
   return new Promise((resolve, reject) => {
     const requestUrl = getCurrentInstanceUrl() + '/api/v1/' + resource + '/' + id + (!isNullOrEmpty(subResource) ? `/${subResource}` : '') + '?' + new URLSearchParams(params).toString()
-    invidiousFetch(requestUrl)
-      .then((response) => response.json())
+    const response = process.env.IS_TAURI
+      ? platform.httpGetJson(requestUrl, store.getters.getCurrentInvidiousInstanceAuthorization)
+      : invidiousFetch(requestUrl).then((response) => response.json())
+
+    response
       .then((json) => {
         if (json.error !== undefined) {
           // community is empty, no need to display error.
