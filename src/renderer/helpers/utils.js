@@ -61,8 +61,12 @@ export function calculatePublishedDate(publishedText, isLive = false, isUpcoming
   if (isLive) {
     return now
   } else if (isUpcoming) {
-    if (premiereDate) {
+    if (premiereDate instanceof Date && !isNaN(premiereDate.getTime())) {
       return premiereDate.getTime()
+    } else if (typeof premiereDate === 'number' && !isNaN(premiereDate)) {
+      return premiereDate
+    } else if (typeof premiereDate === 'string' && !isNaN(Date.parse(premiereDate))) {
+      return Date.parse(premiereDate)
     } else {
       // should never happen but just to be sure that we always return a number
       return now
@@ -74,6 +78,10 @@ export function calculatePublishedDate(publishedText, isLive = false, isUpcoming
   }
 
   const match = publishedText.match(PUBLISHED_TEXT_REGEX)
+
+  if (match == null) {
+    return undefined
+  }
 
   const timeFrame = match[2]
   const timeAmount = parseInt(match[1])

@@ -23,6 +23,7 @@ class MainActivity : TauriActivity() {
   override fun onWebViewCreate(webView: WebView) {
     super.onWebViewCreate(webView)
 
+    webView.settings.mediaPlaybackRequiresUserGesture = false
     webView.addJavascriptInterface(AndroidHttpBridge(this, webView), "ZkytAndroidHttp")
 
     ViewCompat.setOnApplyWindowInsetsListener(webView) { view, insets ->

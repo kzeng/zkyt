@@ -76,7 +76,11 @@
 
   .routerView {
     margin-block: var(--mobile-content-top-space) 88px;
-    margin-inline: 12px;
+    margin-inline: 6px;
+  }
+
+  .tauriApp :deep(.card) {
+    inline-size: 95%;
   }
 
   .banner {

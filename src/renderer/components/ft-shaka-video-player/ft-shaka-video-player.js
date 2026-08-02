@@ -258,6 +258,10 @@ export default defineComponent({
       return store.getters.getAutoplayVideos
     })
 
+    const videoCrossorigin = computed(() => {
+      return process.env.IS_TAURI ? null : 'anonymous'
+    })
+
     /** @type {import('vue').ComputedRef<boolean>} */
     const displayVideoPlayButton = computed(() => {
       return store.getters.getDisplayVideoPlayButton
@@ -1199,6 +1203,24 @@ export default defineComponent({
       }
 
       emit('ended')
+    }
+
+    function handleVideoElementError() {
+      const video_ = video.value
+      const error = video_?.error
+      const message = `Video element error code ${error?.code ?? 'unknown'}`
+
+      console.error('[ZKYT video element error]', {
+        message,
+        mediaErrorMessage: error?.message,
+        networkState: video_?.networkState,
+        readyState: video_?.readyState,
+        currentSrc: video_?.currentSrc,
+        format: props.format,
+        videoId: props.videoId
+      })
+
+      showToast(message)
     }
 
     function handleCanPlay() {
@@ -3380,6 +3402,7 @@ export default defineComponent({
       playerDimensions,
 
       autoplayVideos,
+      videoCrossorigin,
       sponsorBlockShowSkippedToast,
 
       skippedSponsorBlockSegments,
@@ -3388,6 +3411,7 @@ export default defineComponent({
 
       handlePlay,
       handlePause,
+      handleVideoElementError,
       handleCanPlay,
       handleEnded,
       updateVolume,

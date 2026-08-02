@@ -98,11 +98,12 @@ const lastShortRefreshTimestamp = computed(() => {
 
   let minTimestamp = null
   cacheEntriesForAllActiveProfileChannels.value.forEach((cacheEntry) => {
-    if (!minTimestamp || cacheEntry.timestamp.getTime() < minTimestamp.getTime()) {
-      minTimestamp = cacheEntry.timestamp
+    const timestamp = cacheEntry.timestamp instanceof Date ? cacheEntry.timestamp.getTime() : Date.parse(cacheEntry.timestamp)
+    if (!isNaN(timestamp) && (!minTimestamp || timestamp < minTimestamp)) {
+      minTimestamp = timestamp
     }
   })
-  return getRelativeTimeFromDate(minTimestamp.getTime(), true)
+  return minTimestamp == null ? '' : getRelativeTimeFromDate(minTimestamp, true)
 })
 
 watch(activeSubscriptionList, () => {

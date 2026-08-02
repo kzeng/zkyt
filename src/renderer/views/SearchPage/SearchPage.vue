@@ -402,13 +402,13 @@ function updateSubscriptionDetails(results) {
       channels.push({
         channelId: result.id,
         channelName: result.name,
-        channelThumbnailUrl: result.thumbnail.replace(/^\/\//, 'https://')
+        channelThumbnailUrl: typeof result.thumbnail === 'string' ? result.thumbnail.replace(/^\/\//, 'https://') : ''
       })
     } else {
       channels.push({
         channelId: result.authorId,
         channelName: result.author,
-        channelThumbnailUrl: result.authorThumbnails[0].url.replace(/^\/\//, 'https://')
+        channelThumbnailUrl: typeof result.authorThumbnails?.[0]?.url === 'string' ? result.authorThumbnails[0].url.replace(/^\/\//, 'https://') : ''
       })
     }
   }

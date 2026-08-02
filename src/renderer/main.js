@@ -267,6 +267,26 @@ const app = createApp(App)
 
 app.config.performance = process.env.NODE_ENV === 'development'
 
+if (process.env.IS_TAURI) {
+  app.config.errorHandler = (error, instance, info) => {
+    console.error('[ZKYT Vue error]', info, error?.stack ?? error)
+  }
+
+  window.addEventListener('error', (event) => {
+    console.error('[ZKYT window error]', {
+      message: event.message,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+      stack: event.error?.stack
+    })
+  })
+
+  window.addEventListener('unhandledrejection', (event) => {
+    console.error('[ZKYT unhandled rejection]', event.reason?.stack ?? event.reason)
+  })
+}
+
 app
   .component('FontAwesomeIcon', FontAwesomeIcon)
   .component('FontAwesomeLayers', FontAwesomeLayers)

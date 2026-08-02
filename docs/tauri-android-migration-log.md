@@ -195,6 +195,22 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
 - Fixed Android `/youtubei/v1/player` `FAILED_PRECONDITION` caused by sending GenerateIT `websafeFallbackToken` as if it were a real content-bound player poToken. ZKYT now only sends `serviceIntegrityDimensions.poToken` when BotGuard produces a real WebPO-minter content token; fallback tokens are not attached to `/player`, manifest, or caption URLs.
 - Added an Android-only Local API fallback from the WEB player client to youtubei.js' ANDROID client when `/youtubei/v1/player` returns `FAILED_PRECONDITION`. This keeps the desktop FreeTube WEB+poToken path intact while allowing Android playback metadata to load when a real WebPO content token is unavailable in WebView.
 - Fixed the Tauri Local API fetch adapter to honor the standard `fetch(input, init)` merge behavior. youtubei.js passes processed Innertube headers and JSON payload in `init` even when `input` is already a `Request`; the previous adapter ignored `init` in that case, so Android client fallback requests were still sent with the original WEB payload.
+- Fixed Android image and watch-page loading regressions found on Pixel testing:
+  - Tauri/Android list thumbnails and playlist thumbnails now use direct YouTube image URLs instead of Invidious image proxy URLs. This avoids broken images when the selected Invidious instance rejects `/vi/...` or `/ggpht/...` image proxy requests while the phone VPN can reach YouTube directly.
+  - Tauri image URL rewriting now leaves YouTube image URLs intact and safely handles missing image HTML/URLs.
+  - Local API list parsing now tolerates missing YouTube thumbnail, playlist endpoint, and comment timestamp fields instead of throwing `undefined.replace(...)`, which could leave the watch page stuck in the loading state before the Shaka player was mounted.
+  - Watch page route cleanup now checks that the Shaka player ref actually exposes `destroyPlayer()` before calling it, preventing route/navigation failures when the player is not mounted because the page is still loading or in an error state.
+  - The Tauri video element no longer sets `crossorigin="anonymous"` for Android. Direct `i.ytimg.com` poster images do not provide CORS headers in WebView, so the old attribute could block the video cover/poster image even when the image URL was reachable through the VPN.
+  - Subscription cache timestamps loaded from persisted JSON are now normalized before comparison, avoiding `getTime is not a function` when the app restores into the Subscriptions page.
+  - Added Tauri-only global Vue/window/unhandled-rejection diagnostics so future Android WebView errors include stack/route context instead of only minified `renderer.js` messages.
+  - Disabled SABR manifest setup unless a real content `poToken` and ustreamer config are available. Android often receives only a websafe fallback token from BotGuard, and feeding an undefined token into the SABR parser caused the watch page to remain in the loading/cover state without playback controls. The fallback path now uses the normal DASH manifest instead.
+  - Added a timeout around Local API DASH manifest generation and fall back to legacy formats when DASH generation stalls. This prevents the watch page from remaining in the fullscreen loading state with no player controls.
+- Reduced Android/mobile content side gutters:
+  - Mobile app content margin changed from 12px to 6px.
+  - Common card-based pages now use 95% width on Tauri/mobile instead of the previous 90%, reducing the visual left/right screen margin by about half.
+- Adjusted Android playback startup diagnostics:
+  - Android WebView now explicitly disables `mediaPlaybackRequiresUserGesture` so Shaka/video playback is not blocked by the WebView media policy.
+  - The video element now logs native media error details on Android, including media error code, ready/network state, current source, selected format, and video id.
 
 ### Current Limitations
 

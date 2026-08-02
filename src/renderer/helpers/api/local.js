@@ -21,6 +21,10 @@ const TRACKING_PARAM_NAMES = [
   'utm_content',
 ]
 
+function normalizeYoutubeImageUrl(url) {
+  return typeof url === 'string' ? url.replace(/^\/\//, 'https://') : ''
+}
+
 if (process.env.SUPPORTS_LOCAL_API) {
   Platform.shim.eval = (data) => {
     return new Promise((resolve, reject) => {
@@ -1435,7 +1439,7 @@ export function parseChannelHomeTab(homeTab, channelId, channelName) {
           title: shelf.title?.text,
           content: shelf.contents.map(e => parseListItem(e.content, channelId, channelName)).filter(_ => _),
           subtitle: shelf.subtitle?.text,
-          playlistId: shelf.endpoint?.metadata.url.includes('/playlist') ? shelf.endpoint?.metadata.url.replace('/playlist?list=', '') : null
+          playlistId: shelf.endpoint?.metadata?.url?.includes('/playlist') ? shelf.endpoint.metadata.url.replace('/playlist?list=', '') : null
         })
       }
     }
@@ -1867,7 +1871,7 @@ function parseListItem(item, channelId, channelName) {
       return {
         type: 'channel',
         dataSource: 'local',
-        thumbnail: game.box_art.at(0).url.replace(/^\/\//, 'https://'),
+        thumbnail: normalizeYoutubeImageUrl(game.box_art.at(0)?.url),
         name: game.title.text,
         id: game.endpoint.payload.browseId,
         isGame: true
@@ -1887,7 +1891,7 @@ function parseListItem(item, channelId, channelName) {
       return {
         type: 'channel',
         dataSource: 'local',
-        thumbnail: channel.author.best_thumbnail?.url.replace(/^\/\//, 'https://'),
+        thumbnail: normalizeYoutubeImageUrl(channel.author.best_thumbnail?.url),
         name: channel.author.name,
         id: channel.author.id,
         subscribers,
@@ -1924,7 +1928,7 @@ function parseListItem(item, channelId, channelName) {
       return {
         type: 'channel',
         dataSource: 'local',
-        thumbnail: channel.author.best_thumbnail?.url.replace(/^\/\//, 'https://'),
+        thumbnail: normalizeYoutubeImageUrl(channel.author.best_thumbnail?.url),
         name: channel.author.name,
         id: channel.author.id,
         subscribers,
@@ -2220,7 +2224,7 @@ export function parseLocalComment(comment, commentThread = undefined) {
     authorLink: comment.author.id,
     author: comment.author.name,
     authorId: comment.author.id,
-    authorThumb: comment.author.best_thumbnail.url,
+    authorThumb: normalizeYoutubeImageUrl(comment.author.best_thumbnail?.url),
     isPinned: comment.is_pinned,
     isOwner: !!comment.author_is_channel_owner,
     isMember: !!comment.is_member,
@@ -2231,8 +2235,8 @@ export function parseLocalComment(comment, commentThread = undefined) {
     replyToken,
     showReplies: false,
     replies: [],
-    memberIconUrl: comment.is_member ? comment.member_badge.url : '',
-    time: getRelativeTimeFromDate(calculatePublishedDate(comment.published_time.replace('(edited)', '').trim()), false),
+    memberIconUrl: comment.is_member ? normalizeYoutubeImageUrl(comment.member_badge?.url) : '',
+    time: getRelativeTimeFromDate(calculatePublishedDate((comment.published_time ?? '').replace('(edited)', '').trim()), false),
     likes: comment.like_count,
     numReplies: parseLocalSubscriberCount(comment.reply_count)
   }

@@ -297,6 +297,7 @@ import {
   debounce
 } from '../../helpers/utils.js'
 import { deArrowData, deArrowThumbnail } from '../../helpers/sponsorblock.js'
+import { shouldUseDirectYoutubeImages } from '../../helpers/api/invidious.js'
 import thumbnailPlaceholder from '../../assets/img/thumbnail_placeholder.svg'
 
 const props = defineProps({
@@ -712,10 +713,10 @@ const thumbnail = computed(() => {
   }
 
   let baseUrl
-  if (backendPreference.value === 'invidious') {
-    baseUrl = currentInvidiousInstanceUrl.value
-  } else {
+  if (shouldUseDirectYoutubeImages() || backendPreference.value !== 'invidious') {
     baseUrl = 'https://i.ytimg.com'
+  } else {
+    baseUrl = currentInvidiousInstanceUrl.value
   }
 
   switch (thumbnailPreference.value) {

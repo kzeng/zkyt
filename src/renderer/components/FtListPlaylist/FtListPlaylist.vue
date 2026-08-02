@@ -98,6 +98,7 @@ import FtIconButton from '../FtIconButton/FtIconButton.vue'
 import platform from '../../platform'
 
 import store from '../../store/index'
+import { shouldUseDirectYoutubeImages } from '../../helpers/api/invidious.js'
 
 import { showToast } from '../../helpers/utils'
 import thumbnailPlaceholder from '../../assets/img/thumbnail_placeholder.svg'
@@ -181,8 +182,8 @@ if (isUserPlaylist.value) {
 function parseInvidiousData() {
   title = props.data.title
 
-  thumbnail = props.data.playlistThumbnail
-    .replace('https://i.ytimg.com', currentInvidiousInstanceUrl.value)
+  thumbnail = (props.data.playlistThumbnail ?? thumbnailPlaceholder)
+    .replace('https://i.ytimg.com', shouldUseDirectYoutubeImages() ? 'https://i.ytimg.com' : currentInvidiousInstanceUrl.value)
     .replace('hqdefault', 'mqdefault')
 
   channelName = props.data.author
@@ -210,7 +211,7 @@ function parseUserData() {
   title = props.data.playlistName
 
   if (props.data.videos.length > 0) {
-    const origin = backendPreference.value === 'invidious'
+    const origin = backendPreference.value === 'invidious' && !shouldUseDirectYoutubeImages()
       ? currentInvidiousInstanceUrl.value
       : 'https://i.ytimg.com'
 

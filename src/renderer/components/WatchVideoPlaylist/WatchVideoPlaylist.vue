@@ -174,7 +174,7 @@ import {
   parseLocalPlaylistVideo,
   untilEndOfLocalPlayList,
 } from '../../helpers/api/local'
-import { invidiousGetPlaylistInfo } from '../../helpers/api/invidious'
+import { invidiousGetPlaylistInfo, shouldUseDirectYoutubeImages } from '../../helpers/api/invidious'
 import { getSortedPlaylistItems, SORT_BY_VALUES } from '../../helpers/playlists'
 
 const props = defineProps({
@@ -308,7 +308,7 @@ const previewVideoThumbnail = computed(() => {
     const videoId = playlistItems.value[index].videoId
 
     if (videoId) {
-      const baseUrl = backendPreference.value === 'invidious'
+      const baseUrl = backendPreference.value === 'invidious' && !shouldUseDirectYoutubeImages()
         ? currentInvidiousInstanceUrl.value
         : 'https://i.ytimg.com'
       return `${baseUrl}/vi/${videoId}/default.jpg`

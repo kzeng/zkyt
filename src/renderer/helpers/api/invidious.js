@@ -753,6 +753,10 @@ export function youtubeImageUrlToInvidious(url, currentInstance = null) {
     return null
   }
 
+  if (process.env.IS_TAURI) {
+    return url.startsWith('//') ? 'https:' + url : url
+  }
+
   if (currentInstance === null) {
     currentInstance = getCurrentInstanceUrl()
   }
@@ -772,7 +776,15 @@ export function youtubeImageUrlToInvidious(url, currentInstance = null) {
  * @returns {string}
  */
 export function invidiousImageUrlToInvidious(url, currentInstance = null) {
+  if (url == null) {
+    return ''
+  }
+
   return url.replaceAll('/ggpht/', `${currentInstance}/ggpht/`)
+}
+
+export function shouldUseDirectYoutubeImages() {
+  return process.env.IS_TAURI
 }
 
 /**
@@ -878,7 +890,7 @@ function parseInvidiousCommunityData(data) {
   return {
     // use #/ to support channel YT links.
     // ex post: https://www.youtube.com/post/UgkxMpGt1SVlHwA1afwqDr2DZLn-hmJJQqKo
-    postText: data.contentHtml.replaceAll('href="/', 'href="#/'),
+    postText: (data.contentHtml ?? '').replaceAll('href="/', 'href="#/'),
     postId: data.commentId,
     authorThumbnails: data.authorThumbnails.map(thumbnail => {
       thumbnail.url = youtubeImageUrlToInvidious(thumbnail.url)

@@ -911,7 +911,9 @@ export default defineComponent({
 
             if (
               videoInfo.info.streaming_data?.server_abr_streaming_url &&
-              videoInfo.info.player_config.media_common_config.media_ustreamer_request_config
+              videoInfo.info.player_config.media_common_config.media_ustreamer_request_config &&
+              typeof poToken === 'string' &&
+              typeof videoInfo.info.player_config.media_common_config.media_ustreamer_request_config.video_playback_ustreamer_config === 'string'
             ) {
               const storyboards = storyboard
                 ? [{
@@ -934,8 +936,14 @@ export default defineComponent({
               result.streaming_data.adaptive_formats[0]?.signature_cipher ||
               result.streaming_data.adaptive_formats[0]?.cipher
             ) {
-              this.manifestSrc = await this.createLocalDashManifest(result)
-              this.manifestMimeType = MANIFEST_TYPE_DASH
+              try {
+                this.manifestSrc = await this.createLocalDashManifest(result)
+                this.manifestMimeType = MANIFEST_TYPE_DASH
+              } catch (error) {
+                console.error(`Failed to generate DASH manifest for this video ${this.videoId}, falling back to legacy formats...`, error)
+                this.manifestSrc = null
+                this.enableLegacyFormat()
+              }
             } else {
               this.manifestSrc = null
               this.enableLegacyFormat()
@@ -1636,11 +1644,16 @@ export default defineComponent({
      * @param {boolean} includeThumbnails
      */
     createLocalDashManifest: async function (videoInfo, includeThumbnails = false) {
-      const xmlData = await videoInfo.toDash({
-        manifest_options: {
-          include_thumbnails: includeThumbnails,
-        },
-      })
+      const xmlData = await Promise.race([
+        videoInfo.toDash({
+          manifest_options: {
+            include_thumbnails: includeThumbnails,
+          },
+        }),
+        new Promise((resolve, reject) => {
+          setTimeout(() => reject(new Error('Timed out generating DASH manifest')), 12_000)
+        })
+      ])
 
       return `data:application/dash+xml;charset=UTF-8,${encodeURIComponent(xmlData)}`
     },
@@ -1945,6 +1958,10 @@ export default defineComponent({
     },
 
     destroyPlayer: async function() {
+      if (typeof this.$refs.player?.destroyPlayer !== 'function') {
+        return
+      }
+
       const uiState = await this.$refs.player.destroyPlayer()
       this.startNextVideoInFullscreen = uiState.startNextVideoInFullscreen
       this.startNextVideoInFullwindow = uiState.startNextVideoInFullwindow

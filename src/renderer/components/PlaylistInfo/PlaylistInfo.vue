@@ -270,6 +270,7 @@ import FtPrompt from '../FtPrompt/FtPrompt.vue'
 import FtShareButton from '../FtShareButton/FtShareButton.vue'
 
 import store from '../../store/index'
+import { shouldUseDirectYoutubeImages } from '../../helpers/api/invidious.js'
 
 import {
   ctrlFHandler,
@@ -450,7 +451,7 @@ const thumbnail = computed(() => {
   }
 
   let baseUrl = 'https://i.ytimg.com'
-  if (backendPreference.value === 'invidious') {
+  if (backendPreference.value === 'invidious' && !shouldUseDirectYoutubeImages()) {
     baseUrl = currentInvidiousInstanceUrl.value
   } else if (typeof props.playlistThumbnail === 'string' && props.playlistThumbnail.length > 0) {
     // Use playlist thumbnail provided by YT when available

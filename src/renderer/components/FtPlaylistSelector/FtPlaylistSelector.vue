@@ -57,6 +57,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import store from '../../store/index'
+import { shouldUseDirectYoutubeImages } from '../../helpers/api/invidious.js'
 
 import thumbnailPlaceholder from '../../assets/img/thumbnail_placeholder.svg'
 
@@ -176,7 +177,7 @@ const videoPresenceCountInPlaylistTextVisible = computed(() => {
 const thumbnail = ref(thumbnailPlaceholder)
 
 if (props.playlist.videos.length > 0) {
-  const origin = backendPreference.value === 'invidious'
+  const origin = backendPreference.value === 'invidious' && !shouldUseDirectYoutubeImages()
     ? currentInvidiousInstanceUrl.value
     : 'https://i.ytimg.com'
 
