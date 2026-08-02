@@ -144,6 +144,19 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
   - Removed Android `enableEdgeToEdge()` from `MainActivity` because it placed the WebView top navigation under the system status bar, making the visible top icons hard or impossible to tap.
   - Tauri startup now clears a persisted default Invidious instance when it is no longer present in the bundled usable instance list, then falls back to the bundled instance.
 - Added a Tauri-native HTTPS JSON fetch command and moved Invidious API JSON calls through it on Tauri/Android. This avoids Android WebView CORS failures such as `No 'Access-Control-Allow-Origin' header` on otherwise reachable Invidious API endpoints.
+- Added Invidious native-fetch fallback across bundled instances on Tauri/Android and allowed non-CORS instances in the Tauri instance list because JSON API calls no longer run inside WebView.
+- Expanded native HTTP error formatting so Android logs include the underlying DNS/TLS/timeout cause instead of only `error sending request`.
+- Applied Android system bar insets to the Tauri WebView from `MainActivity` so the top navigation is laid out below the status bar.
+- Started mobile-specific UI restructuring instead of continuing to reuse the desktop shell on phones:
+  - Mobile top navigation now hides desktop-style back/forward controls and keeps a centered app identity with a dedicated search entry.
+  - Mobile bottom navigation is now a fixed five-tab touch bar with larger hit targets.
+  - Mobile content spacing now reserves explicit room for the top app bar and bottom tab bar.
+  - The mobile More menu is presented above the bottom tab bar instead of as a narrow desktop side-menu remnant.
+- Tightened the Android mobile shell after Pixel 9 Pro testing:
+  - Added a Tauri-only mobile top safe-area offset so the logo, search icon, expanded search field, and page content start below the Android status bar instead of occupying the system icon area.
+  - Made the mobile search icon an explicit right-side grid target with its own accessible label/title and kept focus behavior when the search field opens.
+  - Replaced the mobile bottom navigation "More" tab with a direct Settings tab. The desktop sidebar keeps its more menu for secondary destinations, but phones now get settings as a first-level destination instead of a dropdown-style desktop pattern.
+  - Raised the mobile shell breakpoint and matching search toggle logic to 960px so Pixel-class phones in landscape still use the mobile top/bottom navigation instead of falling back to the desktop sidebar layout.
 
 ### Current Limitations
 

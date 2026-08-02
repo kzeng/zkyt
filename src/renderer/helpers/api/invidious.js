@@ -53,9 +53,14 @@ export function invidiousFetch(url) {
 
 function invidiousAPICall({ resource, id = '', params = {}, doLogError = true, subResource = '' }) {
   return new Promise((resolve, reject) => {
-    const requestUrl = getCurrentInstanceUrl() + '/api/v1/' + resource + '/' + id + (!isNullOrEmpty(subResource) ? `/${subResource}` : '') + '?' + new URLSearchParams(params).toString()
+    const buildRequestUrl = (instanceUrl) => {
+      return instanceUrl + '/api/v1/' + resource + '/' + id + (!isNullOrEmpty(subResource) ? `/${subResource}` : '') + '?' + new URLSearchParams(params).toString()
+    }
+
+    const requestUrl = buildRequestUrl(getCurrentInstanceUrl())
+
     const response = process.env.IS_TAURI
-      ? platform.httpGetJson(requestUrl, store.getters.getCurrentInvidiousInstanceAuthorization)
+      ? getTauriInvidiousJson(requestUrl, buildRequestUrl)
       : invidiousFetch(requestUrl).then((response) => response.json())
 
     response
@@ -78,6 +83,33 @@ function invidiousAPICall({ resource, id = '', params = {}, doLogError = true, s
         reject(error)
       })
   })
+}
+
+async function getTauriInvidiousJson(requestUrl, buildRequestUrl) {
+  const authorization = store.getters.getCurrentInvidiousInstanceAuthorization
+
+  try {
+    return await platform.httpGetJson(requestUrl, authorization)
+  } catch (error) {
+    const currentInstance = getCurrentInstanceUrl()
+    const instances = store.getters.getInvidiousInstancesList ?? []
+
+    for (const instance of instances) {
+      if (instance === currentInstance) {
+        continue
+      }
+
+      try {
+        const json = await platform.httpGetJson(buildRequestUrl(instance))
+        store.commit('setCurrentInvidiousInstance', instance)
+        return json
+      } catch (fallbackError) {
+        console.error('Invidious API fallback error', instance, fallbackError)
+      }
+    }
+
+    throw error
+  }
 }
 
 async function resolveUrl(url) {

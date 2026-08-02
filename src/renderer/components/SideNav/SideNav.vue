@@ -116,7 +116,7 @@
           {{ $t("Playlists") }}
         </p>
       </router-link>
-      <SideNavMoreOptions />
+      <SideNavMoreOptions class="mobileHidden" />
       <router-link
         class="navOption mobileShow"
         role="button"
@@ -140,7 +140,7 @@
       </router-link>
       <hr>
       <router-link
-        class="navOption mobileShow smallMobileOnlyHidden"
+        class="navOption mobileShow"
         role="button"
         to="/settings"
         :title="settingsTitle"

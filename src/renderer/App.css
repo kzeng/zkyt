@@ -61,19 +61,31 @@
   opacity: 0;
 }
 
-@media only screen and (width <= 680px) {
+@media only screen and (width <= 960px) {
+  .app {
+    display: block;
+    min-block-size: 100%;
+    --mobile-top-safe-area: 0px;
+    --mobile-top-bar-height: 56px;
+    --mobile-content-top-space: calc(var(--mobile-top-safe-area) + var(--mobile-top-bar-height) + 16px);
+  }
+
+  .tauriApp {
+    --mobile-top-safe-area: max(64px, env(safe-area-inset-top));
+  }
+
   .routerView {
-    margin-block: 68px;
-    margin-inline: 8px;
+    margin-block: var(--mobile-content-top-space) 88px;
+    margin-inline: 12px;
   }
 
   .banner {
     inline-size: 90%;
-    margin-block: 60px 0;
+    margin-block: 16px 0;
   }
 
   .flexBox {
-    margin-block: 60px -75px;
+    margin-block: var(--mobile-content-top-space) 88px;
   }
 
   .changeLogText {

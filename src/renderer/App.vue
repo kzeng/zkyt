@@ -6,6 +6,7 @@
       hideOutlines: outlinesHidden,
       isLocaleRightToLeft: isLocaleRightToLeft,
       isSideNavOpen: isSideNavOpen,
+      tauriApp: isTauri,
       hideLabelsSideBar: hideLabelsSideBar && !isSideNavOpen
     }"
   >
@@ -168,6 +169,7 @@ const defaultInvidiousInstance = computed(() => store.getters.getDefaultInvidiou
 const invidiousInstancesList = computed(() => store.getters.getInvidiousInstancesList ?? [])
 
 const dataReady = ref(false)
+const isTauri = process.env.IS_TAURI
 
 onMounted(async () => {
   await store.dispatch('grabUserSettings')

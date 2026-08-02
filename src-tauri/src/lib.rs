@@ -34,6 +34,19 @@ fn unsupported(command: &'static str, reason: &'static str) -> String {
         .unwrap_or_else(|_| format!("{command}: {reason}"))
 }
 
+fn format_reqwest_error(error: reqwest::Error) -> String {
+    let mut message = error.to_string();
+    let mut source = std::error::Error::source(&error);
+
+    while let Some(error) = source {
+        message.push_str(": ");
+        message.push_str(&error.to_string());
+        source = error.source();
+    }
+
+    message
+}
+
 fn player_cache_path(app: &AppHandle, key: &str) -> Result<PathBuf, String> {
     let cache_dir = app
         .path()
@@ -857,7 +870,7 @@ async fn http_get_json(url: String, authorization: Option<String>) -> Result<Val
         request = request.header(reqwest::header::AUTHORIZATION, authorization);
     }
 
-    let response = request.send().await.map_err(|error| error.to_string())?;
+    let response = request.send().await.map_err(format_reqwest_error)?;
     let status = response.status();
     let text = response.text().await.map_err(|error| error.to_string())?;
 

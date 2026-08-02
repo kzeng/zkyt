@@ -26,13 +26,13 @@
 .moreOptionContainer {
   position: fixed;
   background-color: var(--side-nav-color);
-  inset-block-end: 60px;
+  inset-block-end: 72px;
   inline-size: 70px;
   z-index: 0;
   box-shadow: 3px -3px 5px 0 rgb(0 0 0 / 20%);
 }
 
-@media only screen and (width <= 680px) {
+@media only screen and (width <= 960px) {
   .sideNavMoreOptions {
     display: block;
   }
@@ -48,9 +48,14 @@
 
   .navOption,
   .closed .navOption {
-    inline-size: 70px;
-    block-size: 40px;
-    padding-block: 10px;
+    align-items: center;
+    block-size: 66px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    inline-size: 100%;
+    justify-content: center;
+    padding-block: 6px;
     padding-inline: 0;
   }
 
@@ -59,14 +64,16 @@
     inline-size: 100%;
     text-align: center;
     inset-inline-start: 0;
-    font-size: 11px;
+    font-size: 12px;
+    line-height: 1.2;
   }
 
   .navIcon {
     margin-inline-start: 0;
-    inline-size: 100%;
+    block-size: 22px;
+    inline-size: 22px;
     display: block;
-    margin-block-start: 0.5em;
+    margin-block-start: 0;
   }
 
   .navIcon.fa-user-check {
@@ -79,7 +86,17 @@
   }
 
   .closed .navIconExpand {
-    block-size: 1.3em;
+    block-size: 22px;
+  }
+
+  .moreOptionContainer {
+    border-start-start-radius: 8px;
+    border-start-end-radius: 8px;
+    inline-size: min(220px, calc(100vw - 24px));
+    inset-inline-start: 50%;
+    overflow: hidden;
+    transform: translateX(-50%);
+    z-index: 6;
   }
 }
 

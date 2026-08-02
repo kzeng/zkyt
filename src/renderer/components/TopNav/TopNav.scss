@@ -30,8 +30,13 @@
     background-color: var(--primary-color);
   }
 
-  @media only screen and (width <= 680px) {
+  @media only screen and (width <= 960px) {
     position: fixed;
+    block-size: var(--mobile-top-bar-height, 56px);
+    inset-block-start: var(--mobile-top-safe-area, 0);
+    line-height: var(--mobile-top-bar-height, 56px);
+    justify-content: space-between;
+    padding-inline: 10px;
 
     &:has(+ .sideNav + .routerView .floatingRefreshSection) {
       box-shadow: none;
@@ -40,7 +45,7 @@
 }
 
 .menuButton {
-  @media only screen and (width <= 680px) {
+  @media only screen and (width <= 960px) {
     display: none;
   }
 }
@@ -125,16 +130,31 @@
 
   &.profiles {
     justify-content: flex-end;
-  }
 
-  .navSearchButton {
-    @media only screen and (width >= 681px) {
+    @media only screen and (width <= 960px) {
       display: none;
     }
   }
 
+  .navSearchButton {
+    @media only screen and (width >= 961px) {
+      display: none;
+    }
+
+    @media only screen and (width <= 960px) {
+      align-items: center;
+      block-size: 44px;
+      display: flex;
+      grid-column: 3;
+      inline-size: 44px;
+      justify-content: center;
+      order: 3;
+      padding: 0;
+    }
+  }
+
   .navNewWindowButton {
-    @media only screen and (width <= 680px) {
+    @media only screen and (width <= 960px) {
       display: none;
     }
   }
@@ -176,6 +196,12 @@
       @include top-nav-is-colored {
         background-image: var(--logo-icon-bar-color);
       }
+
+      @media only screen and (width <= 960px) {
+        background-size: 30px;
+        block-size: 30px;
+        inline-size: 30px;
+      }
     }
 
     .logoText {
@@ -189,13 +215,35 @@
       inset-block-start: -3px;
       inline-size: 100px;
 
-      @media only screen and (width <= 680px) {
+      @media only screen and (width <= 960px) {
         display: none;
       }
 
       @include top-nav-is-colored {
         background-image: var(--logo-text-bar-color);
       }
+    }
+  }
+}
+
+.navIconButton {
+  @media only screen and (width <= 960px) {
+    display: none;
+  }
+}
+
+.side:not(.profiles) {
+  @media only screen and (width <= 960px) {
+    display: grid;
+    grid-template-columns: 44px 1fr 44px;
+    inline-size: 100%;
+    margin: 0;
+
+    .logo {
+      grid-column: 2;
+      justify-content: center;
+      order: 2;
+      padding: 0;
     }
   }
 }
@@ -208,11 +256,14 @@
     align-items: center;
     display: flex;
 
-    @media only screen and (width <= 680px) {
+    @media only screen and (width <= 960px) {
       background-color: var(--side-nav-color);
       inset-inline: 0;
       position: fixed;
-      inset-block-start: 60px;
+      inset-block-start: calc(var(--mobile-top-safe-area, 0px) + var(--mobile-top-bar-height, 56px));
+      padding-block: 10px;
+      padding-inline: 12px;
+      z-index: 5;
 
       @include top-nav-is-colored {
         background-color: var(--primary-color-hover);

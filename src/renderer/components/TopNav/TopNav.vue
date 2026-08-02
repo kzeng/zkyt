@@ -46,6 +46,8 @@
       <button
         v-if="!hideSearchBar"
         class="navSearchButton navButton"
+        :aria-label="t('Search / Go to URL')"
+        :title="t('Search / Go to URL')"
         @click="toggleSearchContainer"
       >
         <FontAwesomeIcon
@@ -131,7 +133,7 @@ import platform from '../../platform'
 
 import store from '../../store/index'
 
-import { KeyboardShortcuts, MOBILE_WIDTH_THRESHOLD, SEARCH_RESULTS_DISPLAY_LIMIT } from '../../../constants'
+import { KeyboardShortcuts, SEARCH_RESULTS_DISPLAY_LIMIT } from '../../../constants'
 import { debounce, localizeAndAddKeyboardShortcutToActionTitle, openInternalPath } from '../../helpers/utils'
 import { translateWindowTitle } from '../../helpers/strings'
 import { clearLocalSearchSuggestionsSession, getLocalSearchSuggestions } from '../../helpers/api/local'
@@ -142,6 +144,7 @@ const router = useRouter()
 const route = useRoute()
 
 const showSearchContainer = ref(true)
+const MOBILE_SHELL_WIDTH_THRESHOLD = 960
 /** @type {import('vue').ShallowRef<string[]>} */
 const navigationHistoryDropdownOptions = shallowRef([])
 /** @type {import('vue').ShallowRef<string[]>} */
@@ -386,7 +389,7 @@ const searchSettings = computed(() => store.getters.getSearchSettings)
 function goToSearch(queryText, { event }) {
   const doCreateNewWindow = event && event.shiftKey
 
-  if (window.innerWidth <= MOBILE_WIDTH_THRESHOLD) {
+  if (window.innerWidth <= MOBILE_SHELL_WIDTH_THRESHOLD) {
     searchContainer.value.blur()
     showSearchContainer.value = false
   } else {
@@ -634,14 +637,14 @@ function handleWindowResize() {
   // Don't change the status of showSearchContainer if only the height of the window changes
   // Opening the virtual keyboard can trigger this resize event, but it won't change the width
   if (previousWindowWidth !== window.innerWidth) {
-    showSearchContainer.value = window.innerWidth > MOBILE_WIDTH_THRESHOLD
+    showSearchContainer.value = window.innerWidth > MOBILE_SHELL_WIDTH_THRESHOLD
     previousWindowWidth = window.innerWidth
   }
 }
 
 onMounted(() => {
   previousWindowWidth = window.innerWidth
-  if (window.innerWidth <= MOBILE_WIDTH_THRESHOLD) {
+  if (window.innerWidth <= MOBILE_SHELL_WIDTH_THRESHOLD) {
     showSearchContainer.value = false
   }
 
