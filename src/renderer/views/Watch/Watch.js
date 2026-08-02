@@ -1138,11 +1138,6 @@ export default defineComponent({
         .catch(err => {
           console.error(err)
           if (process.env.SUPPORTS_LOCAL_API && this.backendPreference === 'invidious' && this.backendFallback) {
-            const errorMessage = this.t('Invidious API Error (Click to copy)')
-            showToast(`${errorMessage}: ${err}`, 10000, () => {
-              copyToClipboard(err)
-            })
-            showToast(this.t('Falling back to Local API'))
             this.getVideoInformationLocal()
           } else {
             this.isLoading = false
