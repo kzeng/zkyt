@@ -52,6 +52,7 @@
     "checkforbadtemplates": "node _scripts/findMissingTemplates.mjs",
     "tauri": "tauri",
     "tauri:android:build": "tauri android build",
+    "tauri:android:build:debug": "tauri android build --debug --apk --target aarch64",
     "tauri:android:dev": "tauri android dev",
     "tauri:android:init": "tauri android init",
     "ci": "pnpm install --frozen-lockfile"

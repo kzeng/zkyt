@@ -30,6 +30,7 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
   - `tauri:android:init`
   - `tauri:android:dev`
   - `tauri:android:build`
+  - `tauri:android:build:debug`
 - Added `src-tauri` with:
   - Tauri v2 config
   - Rust app entrypoints
@@ -62,6 +63,8 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
 - `source scripts/android-env.sh && corepack pnpm tauri android init`
 - `source scripts/android-env.sh && rustup component add rustfmt`
 - `source scripts/android-env.sh && corepack pnpm tauri android build`
+- `source scripts/android-env.sh && corepack pnpm tauri android build --debug --apk --target aarch64`
+- `source scripts/android-env.sh && $ANDROID_HOME/build-tools/36.1.0/apksigner verify --verbose --print-certs src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk`
 
 ### Android Environment Setup
 
@@ -108,11 +111,20 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
   - `src-tauri/gen/android/app/build/outputs/bundle/universalRelease/app-universal-release.aab`
 - Gradle currently reports deprecation warnings for future Gradle 9 compatibility, but they do not block the Android build.
 - Expanded `.gitignore` coverage for Tauri/Rust targets, Android Gradle caches, generated packaged assets, generated native libraries, and Android signing files while keeping generated Android project source files trackable.
+- A Pixel 9 Pro install attempt failed when using `app-universal-release-unsigned.apk`. `apksigner` confirmed that package does not verify and is missing `META-INF/MANIFEST.MF`, so Android correctly rejects it as unsigned.
+- Added `tauri:android:build:debug` for an installable arm64 debug APK:
+  - `source scripts/android-env.sh && corepack pnpm run tauri:android:build:debug`
+- Generated and verified this debug APK:
+  - `src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk`
+  - Signature verification passes with Android debug certificate and APK Signature Scheme v2.
+  - `aapt` reports `native-code: 'arm64-v8a'`, which matches Pixel 9 Pro.
+- `adb devices -l` could not see a connected device in this session, so direct device install verification is still pending.
 
 ### Current Limitations
 
 - Android project generation and release packaging are available under `src-tauri/gen/android`.
 - The generated APK is unsigned and must be signed before distribution outside local testing.
+- For manual phone testing, use the debug APK rather than `app-universal-release-unsigned.apk`.
 - Tauri database storage currently uses JSON document files, not SQLite.
 - Tauri Local API `generate_po_token` is still unsupported because the current implementation depends on Electron.
 - Tauri proxy configuration is still unsupported.
@@ -123,6 +135,7 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
 ### Next Steps
 
 - Decide how to handle Android signing keys and release-channel metadata.
+- Connect a Pixel device with USB debugging enabled and run `adb install -r src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk` to verify the first launch path.
 - Replace the JSON document store with SQLite once the Tauri runtime can launch reliably.
 - Add a mobile-specific renderer build flag and progressively hide desktop-only settings on Android.
 - Build the Android watch-page shell and verify WebView playback behavior with Shaka Player.
