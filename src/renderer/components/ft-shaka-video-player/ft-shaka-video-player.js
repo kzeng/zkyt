@@ -1548,8 +1548,15 @@ export default defineComponent({
         return
       }
 
-      const isPortrait = legacyFormats[0].height > legacyFormats[0].width
-      const getResolution = (variant) => isPortrait ? variant.width : variant.height
+      const videoLegacyFormats = legacyFormats.filter(format => format.width > 0 && format.height > 0)
+      const isPortrait = videoLegacyFormats.length > 0 && videoLegacyFormats[0].height > videoLegacyFormats[0].width
+      const getResolution = (variant) => {
+        if (variant.width <= 0 || variant.height <= 0) {
+          return 0
+        }
+
+        return isPortrait ? variant.width : variant.height
+      }
 
       let matches = legacyFormats.filter(variant => {
         return previousQuality === getResolution(variant)
@@ -1563,7 +1570,7 @@ export default defineComponent({
         if (matches.length > 0) {
           matches.sort((a, b) => b.bitrate - a.bitrate)
         } else {
-          matches = [...legacyFormats].sort((a, b) => a.bitrate - b.bitrate)
+          matches = [...legacyFormats].sort((a, b) => b.bitrate - a.bitrate)
         }
       }
 
@@ -2864,7 +2871,9 @@ export default defineComponent({
         // force the player aspect ratio to 16:9 to avoid overflowing the layout, when the video is too tall
 
         const firstFormat = props.legacyFormats[0]
-        forceAspectRatio.value = firstFormat.width / firstFormat.height < 1.5
+        forceAspectRatio.value = firstFormat.width > 0 &&
+          firstFormat.height > 0 &&
+          firstFormat.width / firstFormat.height < 1.5
       }
 
       if (useSponsorBlock.value && sponsorSkips.value.seekBar.length > 0) {

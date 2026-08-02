@@ -948,6 +948,8 @@ export default defineComponent({
               }
             } else if (this.useRemoteManifestFallback(result.streaming_data)) {
               // YouTube sometimes omits direct adaptive format URLs but still provides a remote manifest.
+            } else if (this.useAudioOnlyLegacyFallback(result.streaming_data)) {
+              // Some Android client responses only provide direct audio-only adaptive formats.
             } else {
               this.manifestSrc = null
               this.enableLegacyFormat()
@@ -1694,6 +1696,30 @@ export default defineComponent({
       }
 
       return false
+    },
+
+    useAudioOnlyLegacyFallback: function (streamingData) {
+      const audioFormats = streamingData.adaptive_formats
+        .filter(format => format.has_audio && !format.has_video && format.url)
+        .sort((a, b) => b.bitrate - a.bitrate)
+        .map(format => ({
+          itag: format.itag,
+          qualityLabel: `Audio ${Math.round(format.bitrate / 1000)} kbps`,
+          fps: null,
+          bitrate: format.bitrate,
+          mimeType: format.mime_type,
+          height: 0,
+          width: 0,
+          url: format.url
+        }))
+
+      if (audioFormats.length === 0) {
+        return false
+      }
+
+      this.legacyFormats = audioFormats
+      this.activeFormat = 'legacy'
+      return true
     },
 
     createManifestUrl: function (manifest, mimeType) {
