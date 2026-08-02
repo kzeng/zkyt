@@ -10,10 +10,10 @@ import { WebPoMinter } from 'bgutils-js/webpo'
  * @param {string} videoId
  * @param {import('youtubei.js').Session['context']} context
  */
-export default async function (videoId, context) {
+export default async function (videoId, context, fetchFunc = fetch) {
   const requestKey = 'O43z0dpjhgX20SCx4KAo'
 
-  const challengeResponse = await fetch(
+  const challengeResponse = await fetchFunc(
     'https://www.youtube.com/youtubei/v1/att/get?prettyPrint=false&alt=json',
     {
       method: 'POST',
@@ -47,7 +47,7 @@ export default async function (videoId, context) {
     interpreterUrl = `https:${interpreterUrl}`
   }
 
-  const bgScriptResponse = await fetch(interpreterUrl)
+  const bgScriptResponse = await fetchFunc(interpreterUrl)
   const interpreterJavascript = await bgScriptResponse.text()
 
   if (interpreterJavascript) {
@@ -66,7 +66,7 @@ export default async function (videoId, context) {
   const webPoSignalOutput = []
   const botGuardResponse = await botGuard.snapshot({ webPoSignalOutput }, 10_000)
 
-  const integrityTokenResponse = await fetch(buildURL('GenerateIT', true), {
+  const integrityTokenResponse = await fetchFunc(buildURL('GenerateIT', true), {
     method: 'POST',
     headers: {
       'content-type': 'application/json+protobuf',

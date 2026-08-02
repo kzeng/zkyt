@@ -182,6 +182,9 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
 - Added the Tauri equivalent of FreeTube's Electron `sigFrame` eval path for youtubei.js player deciphering. This keeps the Local API watch-page flow aligned with upstream FreeTube while making it work in the Android WebView runtime, where the Electron iframe helper does not exist.
 - Routed the Local API watch-page `youtubei/v1/player` fetch hook through the same Tauri transport adapter on Android. This preserves FreeTube's youtubei.js API usage while avoiding WebView CORS failures for player/config requests.
 - Changed the Android HTTP bridge from a synchronous JavaScriptInterface call to an asynchronous callback bridge. Long YouTube/Innertube requests now run off the WebView main thread and resolve back into JavaScript, preventing watch-page loading from freezing the UI or DevTools while preserving the same FreeTube API calls.
+- Pixel watch-page testing showed that Invidious `/api/v1/videos/:id` can be disabled or forbidden on the bundled public instances, which correctly triggers FreeTube's Local API fallback. The remaining playback failure was YouTube's `youtubei/v1/player` returning `FAILED_PRECONDITION` because the Android/Tauri path did not generate the content-bound poToken that upstream FreeTube generates in Electron.
+- Reused FreeTube's BotGuard poToken flow on Android by allowing the BotGuard script to use an injected fetch implementation and calling it from the Tauri renderer with the Android HTTP bridge. This keeps the watch-page API behavior aligned with upstream FreeTube while replacing only the Electron-specific execution container.
+- Added Electron-equivalent request headers for Tauri Local API requests to `youtubei/*` and Google BotGuard script URLs, including YouTube `Origin`/`Referer` and same-origin fetch metadata. The Android HTTP bridge now also sends fixed-length POST bodies so YouTube does not receive chunked request bodies for Innertube calls.
 
 ### Current Limitations
 
@@ -189,7 +192,7 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
 - The generated APK is unsigned and must be signed before distribution outside local testing.
 - For manual phone testing, use the debug APK rather than `app-universal-release-unsigned.apk`.
 - Tauri database storage currently uses JSON document files, not SQLite.
-- Tauri Local API `generate_po_token` support is still incomplete for playback paths that need a content poToken outside Electron.
+- Tauri Local API content poToken generation is implemented in the Android renderer path; the Rust `generate_po_token` command remains unsupported because the BotGuard flow runs in WebView instead of the Tauri backend.
 - Tauri proxy configuration is still unsupported.
 - Android external player integration is still unsupported and must be rebuilt using Android intents.
 - The renderer shell has initial mobile-specific navigation, but deeper pages still need more phone-first layout work.

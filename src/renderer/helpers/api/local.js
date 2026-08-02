@@ -74,15 +74,30 @@ if (process.env.SUPPORTS_LOCAL_API) {
 async function tauriFetch(input, init = undefined) {
   const request = input instanceof Request ? input : new Request(input, init)
   const headers = {}
+  const url = request.url
 
   request.headers.forEach((value, key) => {
     headers[key] = value
   })
 
+  headers['user-agent'] ??= navigator.userAgent
+
+  if (url.startsWith('https://www.youtube.com/youtubei/')) {
+    headers.referer ??= 'https://www.youtube.com/'
+    headers.origin ??= 'https://www.youtube.com'
+    headers['sec-fetch-site'] ??= 'same-origin'
+    headers['sec-fetch-mode'] ??= 'same-origin'
+    headers['x-youtube-bootstrap-logged-in'] ??= 'false'
+  } else if (url.startsWith('https://www.google.com/js/')) {
+    headers['sec-fetch-dest'] ??= 'script'
+    headers['sec-fetch-site'] ??= 'cross-site'
+    headers['accept-language'] ??= '*'
+  }
+
   const method = request.method.toUpperCase()
   const body = method === 'GET' || method === 'HEAD' ? null : await request.text()
   const response = await platform.httpRequest({
-    url: request.url,
+    url,
     method,
     headers,
     body,
@@ -138,6 +153,20 @@ async function createInnertube({ withPlayer = false, location = undefined, safet
     cache,
     generate_session_locally: !!generateSessionLocally
   })
+}
+
+async function generateContentPoToken(videoId, context) {
+  if (process.env.IS_ELECTRON) {
+    return await platform.generatePoToken(videoId, context)
+  }
+
+  if (process.env.IS_TAURI) {
+    const { default: generatePoToken } = await import('../../../botGuardScript')
+
+    return await generatePoToken(videoId, JSON.parse(context), tauriFetch)
+  }
+
+  return undefined
 }
 
 /** @type {Innertube | null} */
@@ -485,9 +514,9 @@ export async function getLocalVideoInfo(id) {
   // based on the videoId
   let contentPoToken
 
-  if (process.env.IS_ELECTRON) {
+  if (process.env.IS_ELECTRON || process.env.IS_TAURI) {
     try {
-      contentPoToken = await platform.generatePoToken(
+      contentPoToken = await generateContentPoToken(
         id,
         JSON.stringify(webInnertube.session.context)
       )

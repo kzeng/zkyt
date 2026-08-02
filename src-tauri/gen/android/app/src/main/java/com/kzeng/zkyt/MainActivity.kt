@@ -91,9 +91,11 @@ class AndroidHttpBridge(
       }
 
       if (!payload.isNull("body")) {
+        val bodyBytes = payload.getString("body").toByteArray(Charsets.UTF_8)
         connection.doOutput = true
+        connection.setFixedLengthStreamingMode(bodyBytes.size)
         connection.outputStream.use { output ->
-          output.write(payload.getString("body").toByteArray(Charsets.UTF_8))
+          output.write(bodyBytes)
         }
       }
 
