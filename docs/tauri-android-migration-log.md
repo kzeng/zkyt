@@ -157,6 +157,8 @@ Refactor FreeTube toward a Tauri v2 runtime so the project can eventually suppor
   - Made the mobile search icon an explicit right-side grid target with its own accessible label/title and kept focus behavior when the search field opens.
   - Replaced the mobile bottom navigation "More" tab with a direct Settings tab. The desktop sidebar keeps its more menu for secondary destinations, but phones now get settings as a first-level destination instead of a dropdown-style desktop pattern.
   - Raised the mobile shell breakpoint and matching search toggle logic to 960px so Pixel-class phones in landscape still use the mobile top/bottom navigation instead of falling back to the desktop sidebar layout.
+- Investigated empty Popular/Search results on a Pixel using Clash VPN. The installed app has `INTERNET` granted and Android reports the VPN network as validated, so the issue is not a missing Android permission. Added Tauri/Invidious fallback for empty first-page `popular` and `search` arrays because some instances can return successful but empty API responses under specific instance/VPN/region combinations. Also fixed the search page to stop loading if an API returns no result object, and truncated native HTTP error bodies so Android toasts/logs remain readable.
+- Re-tested the bundled Invidious instances from the development machine on 2026-08-02. `https://inv.nadeko.net/api/v1/popular` returned valid JSON, while `invidious.f5.si` and `yt.chocolatemoo53.com` returned 403 and `inv.zoomerville.com` hung during probing. The bundled list was reduced to `https://inv.nadeko.net` so Android starts from the currently verified API instance and clears stale persisted defaults that are no longer bundled.
 
 ### Current Limitations
 

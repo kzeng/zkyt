@@ -875,7 +875,8 @@ async fn http_get_json(url: String, authorization: Option<String>) -> Result<Val
     let text = response.text().await.map_err(|error| error.to_string())?;
 
     if !status.is_success() {
-        return Err(format!("HTTP {status}: {text}"));
+        let body = text.chars().take(800).collect::<String>();
+        return Err(format!("HTTP {status}: {body}"));
     }
 
     serde_json::from_str(&text).map_err(|error| error.to_string())

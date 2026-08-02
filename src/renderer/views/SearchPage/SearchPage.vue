@@ -287,6 +287,7 @@ async function performSearchInvidious(payload, options = { resetSearchPage: fals
   try {
     const results = await getInvidiousSearchResults(payload.query, searchPage.value, payload.searchSettings)
     if (!results) {
+      isLoading.value = false
       return
     }
 
